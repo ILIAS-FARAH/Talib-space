@@ -167,7 +167,7 @@ EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
 EMAIL_HOST_USER = 'iliasfarah5@gmail.com'  # Votre email Gmail
-EMAIL_HOST_PASSWORD = 'nkrt wbfy veea zbpk'  # Votre mot de passe d'application
+EMAIL_HOST_PASSWORD = ''  # Votre mot de passe d'application
 
 # Configuration des emails par défaut
 DEFAULT_FROM_EMAIL = 'iliasfarah5@gmail.com'
