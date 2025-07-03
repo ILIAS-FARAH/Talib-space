@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Favorites - Talib Space</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .heart-icon {
+            transition: all 0.3s ease;
+            cursor: pointer;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 50%;
+            padding: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .heart-icon:hover {
+            transform: scale(1.1);
+            background: rgba(255, 255, 255, 1);
+        }
+        
+        .heart-icon.favorited {
+            color: #ef4444;
+        }
+        
+        .heart-icon.not-favorited {
+            color: #9ca3af;
+        }
+
+        /* Ensure footer sticks to bottom */
+        html, body {
+            height: 100%;
+        }
+        
+        body {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        main {
+            flex: 1 0 auto;
+        }
+        
+        footer {
+            flex-shrink: 0;
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    {% csrf_token %}
+    
+    <!-- Navigation -->
+    <nav class="w-full sticky top-0 z-50 bg-white shadow">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center py-4">
+                <div class="flex items-center">
+                    <a href="{% url 'pages:homepage' %}" class="flex items-center">
+                        <img src="https://img.freepik.com/vecteurs-premium/creation-logo-education-scolaire-maison-modele-logo-logement-etudiant_825834-932.jpg"
+                            alt="Talib Space Logo" class="h-12 w-auto mr-3">
+                        <span class="text-2xl font-extrabold text-gray-800">talib space</span>
+                        <span class="ml-4 text-gray-600">| roomate founder</span>
+                    </a>
+                </div>
+
+                <div class="hidden md:flex items-center space-x-8">
+                    <a href="{% url 'pages:offers' %}" class="text-gray-600 hover:text-blue-500 transition duration-300">Offers</a>
+                    <a href="{% url 'etudiants:my_favorites' %}" class="text-blue-500 font-medium">My Favorites</a>
+                    <a href="{% url 'pages:howworks' %}" class="text-gray-600 hover:text-blue-500 transition duration-300">How It Works</a>
+                </div>
+
+                {% if user.is_authenticated %}
+                <div class="flex items-center space-x-4">
+                    <div class="relative">
+                        <button id="user-menu-button" type="button" class="flex items-center space-x-2 focus:outline-none">
+                            <span class="text-gray-600">{{ user.name }}</span>
+                            <div class="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden">
+                                {% if user.profile_picture %}
+                                    <img src="{{ user.profile_picture.url }}" alt="Profile Photo" class="w-full h-full object-cover">
+                                {% else %}
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-500" viewBox="0 0 20 20" fill="currentColor">
+                                        <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd" />
+                                    </svg>
+                                {% endif %}
+                            </div>
+                        </button>
+                        
+                        <div id="user-dropdown" class="hidden absolute right-0 mt-2 w-48 origin-top-right bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none transition-all duration-200 transform opacity-0 scale-95">
+                            <div class="py-1" role="none">
+                                <a href="{% url 'etudiants:my_announcements' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition duration-150">My Announcements</a>
+                                <a href="{% url 'etudiants:my_favorites' %}" class="block px-4 py-2 text-sm text-blue-700 bg-blue-50 hover:bg-blue-100 transition duration-150">My Favorites</a>
+                                <a href="{% url 'pages:profile' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition duration-150">Profile</a>
+                                <a href="{% url 'inbox' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition duration-150">Inbox</a>
+                                
+                                <div class="border-t border-gray-100"></div>
+                                <a href="{% url 'pages:logout' %}" class="block px-4 py-2 text-sm text-red-700 hover:bg-gray-100 transition duration-150">Sign out</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </nav>
+
+    <main class="flex-1">
+        <div class="container mx-auto px-4 py-8">
+            <!-- Header -->
+            <div class="flex justify-between items-center mb-6">
+                <div>
+                    <h1 class="text-3xl font-bold text-gray-800">My Favorites</h1>
+                    <p class="text-gray-600 mt-2">You have {{ total_favorites }} favorite announcement{{ total_favorites|pluralize }}</p>
+                </div>
+                <a href="{% url 'pages:offers' %}" class="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-md transition duration-300 ease-in-out">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                    </svg>
+                    Browse More Offers
+                </a>
+            </div>
+            
+            {% if total_favorites > 0 %}
+            <!-- Filters Section -->
+            <div class="bg-white rounded-lg shadow-md p-6 mb-8">
+                <h2 class="text-xl font-semibold mb-4">Filter Your Favorites</h2>
+                <form method="get" action="{% url 'etudiants:my_favorites' %}" class="space-y-4 lg:space-y-0 lg:flex lg:space-x-4">
+                    {% csrf_token %}
+                    <div class="lg:w-1/3">
+                        <label for="city" class="block text-sm font-medium text-gray-700 mb-1">City</label>
+                        <select name="city" id="city" class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50">
+                            <option value="">All Cities</option>
+                            {% for city in favorite_cities %}
+                                <option value="{{ city }}" {% if selected_city == city %}selected{% endif %}>{{ city }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="lg:w-1/3">
+                        <label for="room_type" class="block text-sm font-medium text-gray-700 mb-1">Room Type</label>
+                        <select name="room_type" id="room_type" class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50">
+                            <option value="">All Room Types</option>
+                            {% for value, label in room_types %}
+                                <option value="{{ value }}" {% if selected_room_type == value %}selected{% endif %}>{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="lg:w-1/6 flex items-end">
+                        <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md transition duration-300 ease-in-out transform hover:scale-105">
+                            Filter
+                        </button>
+                    </div>
+                </form>
+            </div>
+            
+            <!-- Favorites Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {% for favorite in favorites %}
+                {% with announcement=favorite.announcement %}
+                <div class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300">
+                    <div class="relative h-48 overflow-hidden">
+                        {% with display_image=announcement.get_display_image %}
+                            {% if display_image %}
+                                <img src="{{ display_image.url }}" alt="{{ announcement.title }}" 
+                                     class="w-full h-full object-cover transition-transform duration-500 hover:scale-110">
+                            {% else %}
+                                <div class="w-full h-full bg-gray-200 flex items-center justify-center">
+                                    <span class="text-gray-500">No image available</span>
+                                </div>
+                            {% endif %}
+                        {% endwith %}
+                        
+                        <div class="absolute top-0 right-0 bg-blue-600 text-white px-3 py-1 m-2 rounded-md">
+                            {{ announcement.get_room_type_display }}
+                        </div>
+                        
+                        <!-- Heart Icon for Removing from Favorites -->
+                        <div class="absolute top-2 left-2">
+                            <button 
+                                class="heart-icon favorited"
+                                onclick="toggleFavorite(this)"
+                                data-announcement-id="{{ announcement.id }}"
+                                aria-label="Remove from favorites">
+                                <!-- Filled heart (always favorited in this view) -->
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="currentColor" viewBox="0 0 24 24">
+                                    <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 
+                                             2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09
+                                             C13.09 3.81 14.76 3 16.5 3
+                                             19.58 3 22 5.42 22 8.5
+                                             c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                                </svg>
+                            </button>
+                        </div>
+                        
+                        <!-- Favorited date badge -->
+                        <div class="absolute bottom-2 left-2">
+                            <span class="bg-black bg-opacity-60 text-white text-xs px-2 py-1 rounded-md">
+                                Favorited {{ favorite.created_at|timesince }} ago
+                            </span>
+                        </div>
+                    </div>
+                            
+                    <div class="p-5">
+                        <div class="flex justify-between items-start mb-2">
+                            <h3 class="text-xl font-bold text-gray-800 line-clamp-1">{{ announcement.title }}</h3>
+                            <span class="text-lg font-bold text-blue-600">€{{ announcement.price }}</span>
+                        </div>
+                        
+                        <div class="flex items-center text-gray-600 mb-3">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                            </svg>
+                            <span>{{ announcement.city }}</span>
+                        </div>
+                        
+                        <p class="text-gray-700 mb-4 line-clamp-2">{{ announcement.description }}</p>
+                        
+                        <div class="flex flex-wrap gap-2 mb-4">
+                            {% for amenity in announcement.get_amenities_list %}
+                            <span class="bg-gray-100 text-gray-700 text-xs px-2 py-1 rounded-full">{{ amenity }}</span>
+                            {% endfor %}
+                        </div>
+                        
+                        <div class="text-xs text-gray-500 mb-2">
+                            Posted by: {{ announcement.user.name|default:"Unknown" }}
+                        </div>
+                        
+                        <div class="flex items-center justify-between">
+                            <span class="text-sm text-gray-500">Posted {{ announcement.created_at|timesince }} ago</span>
+                            <a href="{% url 'etudiants:offer_detail' announcement.pk %}" class="inline-block bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md transition duration-300 ease-in-out">
+                                View Details
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                {% endwith %}
+                {% empty %}
+                <div class="col-span-full py-10 text-center">
+                    <div class="bg-white rounded-lg shadow-md p-10">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 mx-auto text-gray-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                        </svg>
+                        <h3 class="text-xl font-medium text-gray-800 mb-2">No favorites found</h3>
+                        <p class="text-gray-600 mb-6">Try adjusting your filters or browse more offers to add to your favorites.</p>
+                        <a href="{% url 'pages:offers' %}" class="inline-block bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md transition duration-300 ease-in-out">
+                            Browse Offers
+                        </a>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- Pagination -->
+            {% if favorites.has_other_pages %}
+            <div class="flex justify-center mt-8">
+                <nav class="flex items-center space-x-2">
+                    {% if favorites.has_previous %}
+                        <a href="?page={{ favorites.previous_page_number }}{% if selected_city %}&city={{ selected_city }}{% endif %}{% if selected_room_type %}&room_type={{ selected_room_type }}{% endif %}" 
+                           class="px-3 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition duration-300">Previous</a>
+                    {% endif %}
+                    
+                    <span class="px-3 py-2 bg-blue-600 text-white rounded-md">
+                        Page {{ favorites.number }} of {{ favorites.paginator.num_pages }}
+                    </span>
+                    
+                    {% if favorites.has_next %}
+                        <a href="?page={{ favorites.next_page_number }}{% if selected_city %}&city={{ selected_city }}{% endif %}{% if selected_room_type %}&room_type={{ selected_room_type }}{% endif %}" 
+                           class="px-3 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition duration-300">Next</a>
+                    {% endif %}
+                </nav>
+            </div>
+            {% endif %}
+            
+            {% else %}
+            <!-- Empty State -->
+            <div class="text-center py-16">
+                <div class="bg-white rounded-lg shadow-md p-12 max-w-lg mx-auto">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-20 w-20 mx-auto text-gray-400 mb-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                    </svg>
+                    <h2 class="text-2xl font-bold text-gray-800 mb-4">No Favorites Yet</h2>
+                    <p class="text-gray-600 mb-8">Start browsing offers and click the heart icon to add announcements to your favorites.</p>
+                    <a href="{% url 'pages:offers' %}" class="inline-flex items-center px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-md transition duration-300 ease-in-out transform hover:scale-105">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                        </svg>
+                        Browse Offers
+                    </a>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </main>
+
+    <footer class="bg-black text-white pt-12 pb-6 px-4 sm:px-6 lg:px-8">
+        <div class="max-w-7xl mx-auto">
+            <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6 mb-8">
+                <div>
+                    <h3 class="text-base font-semibold mb-3">PRODUCT</h3>
+                    <ul class="space-y-1.5">
+                        <li><a href="#" class="text-gray-400 hover:text-white transition text-sm">Home</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white transition text-sm">Browse by State</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white transition text-sm">My Account</a></li>
+                    </ul>
+                </div>
+          
+                <div>
+                    <h3 class="text-base font-semibold mb-3">RESOURCES</h3>
+                    <ul class="space-y-1.5">
+                        <li><a href="#" class="text-gray-400 hover:text-white transition text-sm">About</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white transition text-sm">How It Works</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white transition text-sm">FAQ</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white transition text-sm">Testimonials</a></li>
+                    </ul>
+                </div>
+          
+                <div>
+                    <h3 class="text-base font-semibold mb-3">LEGAL</h3>
+                    <ul class="space-y-1.5">
+                        <li><a href="#" class="text-gray-400 hover:text-white transition text-sm">Privacy</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white transition text-sm">Terms</a></li>
+                        <li><a href="{% url 'contact:contact' %}" class="text-gray-400 hover:text-white transition text-sm">Contact</a></li>
+                    </ul>
+                </div>
+          
+                <div>
+                    <h3 class="text-base font-semibold mb-3">CONNECT</h3>
+                    <div class="flex space-x-3">
+                        <a href="#" class="text-gray-400 hover:text-white transition">
+                            <span class="sr-only">Instagram</span>
+                            <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/>
+                            </svg>
+                        </a>
+                        <a href="#" class="text-gray-400 hover:text-white transition">
+                            <span class="sr-only">Facebook</span>
+                            <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
+                                <path fill-rule="evenodd" d="M22 12c0-5.523-4.477-10-10-10S2 6.477 2 12c0 4.991 3.657 9.128 8.438 9.878v-6.987h-2.54V12h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V12h2.773l-.443 2.89h-2.33v6.988C18.343 21.128 22 16.991 22 12z" clip-rule="evenodd"/>
+                            </svg>
+                        </a>
+                        <a href="#" class="text-gray-400 hover:text-white transition">
+                            <span class="sr-only">Twitter</span>
+                            <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M8.29 20.251c7.547 0 11.675-6.253 11.675-11.675 0-.178 0-.355-.012-.53A8.348 8.348 0 0022 5.92a8.19 8.19 0 01-2.357.646 4.118 4.118 0 001.804-2.27 8.224 8.224 0 01-2.605.996 4.107 4.107 0 00-6.993 3.743 11.65 11.65 0 01-8.457-4.287 4.106 4.106 0 001.27 5.477A4.072 4.072 0 012.8 9.713v.052a4.105 4.105 0 003.292 4.022 4.095 4.095 0 01-1.853.07 4.108 4.108 0 003.834 2.85A8.233 8.233 0 012 18.407a11.616 11.616 0 006.29 1.84"/>
+                            </svg>
+                        </a>
+                        <a href="#" class="text-gray-400 hover:text-white transition">
+                            <span class="sr-only">Discord</span>
+                            <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M20.317 4.37a19.791 19.791 0 00-4.885-1.515.074.074 0 00-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 00-5.487 0 12.64 12.64 0 00-.617-1.25.077.077 0 00-.079-.037A19.736 19.736 0 003.677 4.37a.07.07 0 00-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 00.031.057 19.9 19.9 0 005.993 3.03.078.078 0 00.084-.028c.462-.63.874-1.295 1.226-1.994a.076.076 0 00-.041-.106 13.107 13.107 0 01-1.872-.892.077.077 0 01-.008-.128 10.2 10.2 0 00.372-.292.074.074 0 01.077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 01.078.01c.12.098.246.198.373.292a.077.077 0 01-.006.127 12.299 12.299 0 01-1.873.892.077.077 0 00-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 00.084.028 19.839 19.839 0 006.002-3.03.077.077 0 00.032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 00-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"/>
+                            </svg>
+                        </a>
+                    </div>
+                </div>
+            </div>
+      
+            <div class="border-t border-gray-800 pt-4 text-center text-gray-400 text-xs">
+                <div class="flex flex-col md:flex-row justify-center items-center space-y-1 md:space-y-0 md:space-x-4">
+                    <a href="#" class="hover:text-white transition">Privacy Policy</a>
+                    <a href="#" class="hover:text-white transition">Terms of Service</a>
+                    <span>© 2025 Ilias ahmed. All rights reserved.</span>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+    // User menu dropdown functionality
+    const userMenuButton = document.getElementById('user-menu-button');
+    const userDropdown = document.getElementById('user-dropdown');
+    let isOpen = false;
+
+    if (userMenuButton && userDropdown) {
+        userMenuButton.addEventListener('click', () => {
+            isOpen = !isOpen;
+            
+            if (isOpen) {
+                userDropdown.classList.remove('hidden');
+                setTimeout(() => {
+                    userDropdown.classList.remove('opacity-0', 'scale-95');
+                    userDropdown.classList.add('opacity-100', 'scale-100');
+                }, 10);
+            } else {
+                userDropdown.classList.remove('opacity-100', 'scale-100');
+                userDropdown.classList.add('opacity-0', 'scale-95');
+                setTimeout(() => {
+                    userDropdown.classList.add('hidden');
+                }, 200);
+            }
+        });
+
+        document.addEventListener('click', (event) => {
+            if (!userMenuButton.contains(event.target) && !userDropdown.contains(event.target)){
+                userDropdown.classList.remove('opacity-100', 'scale-100');
+                userDropdown.classList.add('opacity-0', 'scale-95');
+                setTimeout(() => {
+                    userDropdown.classList.add('hidden');
+                    isOpen = false;
+                }, 200);
+            }
+        });
+    }
+
+    // Toggle favorite functionality (remove from favorites)
+    function toggleFavorite(element) {
+        const announcementId = element.getAttribute('data-announcement-id');
+        
+        if (!announcementId) {
+            alert('Error: No announcement ID found');
+            return;
+        }
+        
+        // Disable button during request
+        element.style.pointerEvents = 'none';
+        element.style.opacity = '0.7';
+        
+        // Get CSRF token
+        const csrfToken = getCookie('csrftoken');
+        
+        if (!csrfToken) {
+            alert('Error: CSRF token not found');
+            element.style.pointerEvents = 'auto';
+            element.style.opacity = '1';
+            return;
+        }
+        
+        // Fixed URL: Changed from /etudiants/ to /user/
+        const url = `/user/toggle-favorite/${announcementId}/`;
+        
+        fetch(url, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': csrfToken,
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            credentials: 'same-origin'
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.success && !data.is_favorited) {
+                // Remove the card from the page with animation
+                const card = element.closest('.bg-white');
+                if (card) {
+                    card.style.transition = 'all 0.3s ease';
+                    card.style.opacity = '0';
+                    card.style.transform = 'scale(0.95)';
+                    
+                    setTimeout(() => {
+                        card.remove();
+                        location.reload();
+                        // Check if no more favorites
+                        const remainingCards = document.querySelectorAll('.bg-white.rounded-lg.shadow-md');
+                        if (remainingCards.length === 0) {
+                            location.reload(); // Reload to show empty state
+                        }
+                    }, 300);
+                }
+                
+                // Show success message
+                showNotification('Removed from favorites', 'success');
+            } else {
+                showNotification(data.message || 'An error occurred', 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Fetch error:', error);
+            showNotification('Failed to update favorite', 'error');
+        })
+        .finally(() => {
+            // Re-enable button
+            element.style.pointerEvents = 'auto';
+            element.style.opacity = '1';
+        });
+    }
+
+    // Get CSRF token function
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    // Simple notification function
+    function showNotification(message, type = 'info') {
+        const notification = document.createElement('div');
+        notification.className = `fixed top-4 right-4 px-4 py-2 rounded-md text-white z-50 transition-all duration-300 transform translate-x-full ${
+            type === 'success' ? 'bg-green-500' : 
+            type === 'error' ? 'bg-red-500' : 'bg-blue-500'
+        }`;
+        notification.textContent = message;
+        document.body.appendChild(notification);
+        
+        setTimeout(() => {
+            notification.classList.remove('translate-x-full');
+            notification.classList.add('translate-x-0');
+        }, 10);
+        
+        setTimeout(() => {
+            notification.classList.remove('translate-x-0');
+            notification.classList.add('translate-x-full');
+            setTimeout(() => notification.remove(), 300);
+        }, 3000);
+    }
+    </script>
+</body>
+</html>

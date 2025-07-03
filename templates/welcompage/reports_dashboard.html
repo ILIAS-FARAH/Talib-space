@@ -1,0 +1,832 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Messages de Contact - Talib Space Admin</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        html, body {
+            height: 100%;
+        }
+        
+        /* Custom animations */
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        .animate-slide-in {
+            animation: slideIn 0.3s ease-out;
+        }
+        
+        .animate-fade-in {
+            animation: fadeIn 0.5s ease-out;
+        }
+        
+        /* Hover effects */
+        .stat-card {
+            transition: all 0.3s ease;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+        
+        /* Table row animations */
+        .message-row {
+            transition: all 0.2s ease;
+        }
+        
+        .message-row:hover {
+            background-color: #f8fafc;
+            transform: translateX(2px);
+        }
+        
+        /* Button hover effects */
+        .action-btn {
+            transition: all 0.2s ease;
+        }
+        
+        .action-btn:hover {
+            transform: translateY(-1px);
+        }
+        
+        /* Unread message indicator pulse */
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .unread-indicator {
+            animation: pulse 2s infinite;
+        }
+    </style>
+</head>
+<body class="flex flex-col min-h-screen bg-gray-50">
+    <!-- Debug Info (only in DEBUG mode) -->
+    {% if error_message %}
+        <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4 mx-4 mt-4">
+            <strong>Erreur de Debug:</strong> {{ error_message }}
+        </div>
+    {% endif %}
+
+    <!-- Navigation -->
+    <nav class="w-full sticky top-0 z-50 bg-white shadow-md">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center py-4">
+                <!-- Logo -->
+                <div class="flex items-center">
+                    <a href="{% url 'pages:homepage' %}" class="flex items-center hover:opacity-90 transition-opacity">
+                        <img src="https://img.freepik.com/vecteurs-premium/creation-logo-education-scolaire-maison-modele-logo-logement-etudiant_825834-932.jpg"
+                            alt="Talib Space Logo" class="h-12 w-auto mr-3 rounded-lg">
+                        <div>
+                            <span class="text-2xl font-extrabold text-gray-800">talib space</span>
+                            <div class="text-sm text-gray-600">| roommate finder</div>
+                        </div>
+                    </a>
+                </div>
+
+                <!-- Desktop Navigation -->
+                <div class="hidden md:flex items-center space-x-8">
+                    <a href="{% url 'pages:offers' %}" class="text-gray-600 hover:text-blue-500 transition duration-300 font-medium">Offers</a>
+                    <a href="{% url 'pages:howworks' %}" class="text-gray-600 hover:text-blue-500 transition duration-300 font-medium">How It Works</a>
+                    <a href="{% url 'pages:testo' %}" class="text-gray-600 hover:text-blue-500 transition duration-300 font-medium">Testimonials</a>
+                </div>
+
+                <!-- User Menu -->
+                {% if user.is_authenticated %}
+                    <div class="flex items-center space-x-4">
+                        <div class="relative">
+                            <button id="user-menu-button" type="button" class="flex items-center space-x-3 bg-gray-50 rounded-full p-2 hover:bg-gray-100 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                <span class="text-gray-700 font-medium hidden sm:block">
+                                    {% if user.get_full_name %}
+                                        {{ user.get_full_name }}
+                                    {% elif user.first_name %}
+                                        {{ user.first_name }}
+                                    {% else %}
+                                        {{ user.email|truncatechars:20 }}
+                                    {% endif %}
+                                </span>
+                                <div class="w-8 h-8 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center overflow-hidden">
+                                    {% if user.profile_picture %}
+                                        <img src="{{ user.profile_picture.url }}" alt="Profile Photo" class="w-full h-full object-cover">
+                                    {% else %}
+                                        <span class="text-white font-semibold text-sm">
+                                            {% if user.first_name %}
+                                                {{ user.first_name.0|upper }}
+                                            {% else %}
+                                                {{ user.email.0|upper }}
+                                            {% endif %}
+                                        </span>
+                                    {% endif %}
+                                </div>
+                                <i class="fas fa-chevron-down text-gray-500 text-xs"></i>
+                            </button>
+                            
+                            <!-- Dropdown menu -->
+                            <div id="user-dropdown" class="hidden absolute right-0 mt-2 w-56 origin-top-right bg-white rounded-lg shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none transition-all duration-200 transform opacity-0 scale-95">
+                                {% if user.is_staff %}
+                                    <div class="py-2" role="none">
+                                        <div class="px-4 py-2 border-b border-gray-100">
+                                            <p class="text-sm font-medium text-gray-900">
+                                                {% if user.get_full_name %}
+                                                    {{ user.get_full_name }}
+                                                {% elif user.first_name %}
+                                                    {{ user.first_name }}
+                                                {% else %}
+                                                    {{ user.email }}
+                                                {% endif %}
+                                            </p>
+                                            <p class="text-xs text-gray-500">Administrateur</p>
+                                        </div>
+                                        <a href="{% url 'pages:admin_dashboard' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition duration-150">
+                                            <i class="fas fa-tachometer-alt mr-2"></i>Dashboard
+                                        </a>
+                                        <a href="{% url 'contact:reports_dashboard' %}" class="block px-4 py-2 text-sm text-blue-600 bg-blue-50 transition duration-150">
+                                            <i class="fas fa-chart-bar mr-2"></i>Reports
+                                        </a>
+                                        <a href="{% url 'pages:profile' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition duration-150">
+                                            <i class="fas fa-user mr-2"></i>Profile
+                                        </a>
+                                        <a href="{% url 'pages:settings' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition duration-150">
+                                            <i class="fas fa-cog mr-2"></i>Settings
+                                        </a>
+                                        <div class="border-t border-gray-100 mt-2 pt-2">
+                                            <a href="{% url 'pages:logout' %}" class="block px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition duration-150">
+                                                <i class="fas fa-sign-out-alt mr-2"></i>Sign out
+                                            </a>
+                                        </div>
+                                    </div>
+                                {% else %}
+                                    <div class="py-2" role="none">
+                                        <a href="{% url 'etudiants:my_announcements' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition duration-150">
+                                            <i class="fas fa-bullhorn mr-2"></i>My Announcements
+                                        </a>
+                                        <a href="{% url 'pages:profile' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition duration-150">
+                                            <i class="fas fa-user mr-2"></i>Profile
+                                        </a>
+                                        <a href="{% url 'inbox' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition duration-150">
+                                            <i class="fas fa-envelope mr-2"></i>Inbox
+                                        </a>
+                                        <div class="border-t border-gray-100 mt-2 pt-2">
+                                            <a href="{% url 'pages:logout' %}" class="block px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition duration-150">
+                                                <i class="fas fa-sign-out-alt mr-2"></i>Sign out
+                                            </a>
+                                        </div>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                {% else %}
+                    <div class="flex items-center space-x-4">
+                        <a href="{% url 'pages:login' %}" class="px-4 py-2 border border-blue-500 text-blue-500 rounded-lg hover:bg-blue-50 transition duration-300 font-medium">Sign In</a>
+                        <a href="{% url 'pages:register' %}" class="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition duration-300 font-medium">Create Account</a>
+                    </div>
+                {% endif %}
+
+                <!-- Mobile menu button -->
+                <div class="md:hidden">
+                    <button id="mobile-menu-button" class="p-2 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-colors">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Mobile Navigation -->
+            <div id="mobile-menu" class="mobile-menu md:hidden border-t border-gray-200 py-4 hidden">
+                <div class="space-y-2">
+                    <a href="{% url 'pages:offers' %}" class="block px-4 py-2 text-gray-600 hover:text-blue-500 hover:bg-blue-50 rounded-md transition">Offers</a>
+                    <a href="{% url 'pages:howworks' %}" class="block px-4 py-2 text-gray-600 hover:text-blue-500 hover:bg-blue-50 rounded-md transition">How It Works</a>
+                    <a href="{% url 'pages:testo' %}" class="block px-4 py-2 text-gray-600 hover:text-blue-500 hover:bg-blue-50 rounded-md transition">Testimonials</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="flex-grow max-w-7xl mx-auto px-4 py-8 w-full animate-fade-in">
+        <!-- Header -->
+        <div class="mb-8">
+            <div class="flex items-center justify-between flex-wrap gap-4">
+                <div>
+                    <h1 class="text-3xl font-bold text-gray-900 flex items-center">
+                        <i class="fas fa-chart-bar mr-3 text-blue-600"></i>
+                        Messages de Contact
+                    </h1>
+                    <p class="text-gray-600 mt-2">Gérez tous les messages reçus depuis le formulaire de contact</p>
+                </div>
+                
+                <!-- Quick Actions -->
+                <div class="flex space-x-3">
+                   
+                    <button onclick="window.location.reload()" 
+                            class="inline-flex items-center px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors action-btn">
+                        <i class="fas fa-sync-alt mr-2"></i>Actualiser
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Statistics Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <!-- Total Messages -->
+            <div class="stat-card bg-white p-6 rounded-xl shadow-md border border-gray-100">
+                <div class="flex items-center">
+                    <div class="p-4 rounded-full bg-blue-100">
+                        <i class="fas fa-envelope text-blue-600 text-xl"></i>
+                    </div>
+                    <div class="ml-4">
+                        <h3 class="text-2xl font-bold text-gray-900">{{ total_count|default:0 }}</h3>
+                        <p class="text-gray-600 font-medium">Total Messages</p>
+                        <p class="text-xs text-gray-500 mt-1">Tous les messages reçus</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Unread Messages -->
+            <div class="stat-card bg-white p-6 rounded-xl shadow-md border border-gray-100">
+                <div class="flex items-center">
+                    <div class="p-4 rounded-full bg-yellow-100">
+                        <i class="fas fa-clock text-yellow-600 text-xl"></i>
+                    </div>
+                    <div class="ml-4">
+                        <h3 class="text-2xl font-bold text-gray-900">{{ unread_count|default:0 }}</h3>
+                        <p class="text-gray-600 font-medium">Non Lus</p>
+                        <p class="text-xs text-gray-500 mt-1">Nécessitent une attention</p>
+                        {% if unread_count > 0 %}
+                            <div class="inline-flex items-center mt-1">
+                                <div class="w-2 h-2 bg-yellow-500 rounded-full unread-indicator mr-1"></div>
+                                <span class="text-xs text-yellow-600 font-medium">Nouveaux messages</span>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Read Messages -->
+            <div class="stat-card bg-white p-6 rounded-xl shadow-md border border-gray-100">
+                <div class="flex items-center">
+                    <div class="p-4 rounded-full bg-green-100">
+                        <i class="fas fa-check-circle text-green-600 text-xl"></i>
+                    </div>
+                    <div class="ml-4">
+                        <h3 class="text-2xl font-bold text-gray-900">{{ read_count|default:0 }}</h3>
+                        <p class="text-gray-600 font-medium">Traités</p>
+                        <p class="text-xs text-gray-500 mt-1">Messages marqués comme lus</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Messages -->
+            <div class="stat-card bg-white p-6 rounded-xl shadow-md border border-gray-100">
+                <div class="flex items-center">
+                    <div class="p-4 rounded-full bg-purple-100">
+                        <i class="fas fa-calendar-week text-purple-600 text-xl"></i>
+                    </div>
+                    <div class="ml-4">
+                        <h3 class="text-2xl font-bold text-gray-900">{{ recent_count|default:0 }}</h3>
+                        <p class="text-gray-600 font-medium">Cette Semaine</p>
+                        <p class="text-xs text-gray-500 mt-1">Messages des 7 derniers jours</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Alert for unread messages -->
+        {% if unread_count > 0 %}
+            <div class="bg-gradient-to-r from-yellow-50 to-orange-50 border-l-4 border-yellow-400 p-4 mb-6 rounded-lg animate-slide-in">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <i class="fas fa-exclamation-triangle text-yellow-500 text-lg"></i>
+                    </div>
+                    <div class="ml-3">
+                        <h3 class="text-sm font-medium text-yellow-800">Attention requise</h3>
+                        <p class="text-sm text-yellow-700 mt-1">
+                            Vous avez <strong>{{ unread_count }}</strong> message{{ unread_count|pluralize }} non lu{{ unread_count|pluralize }} qui nécessite{{ unread_count|pluralize:"nt" }} votre attention.
+                        </p>
+                    </div>
+                    <div class="ml-auto">
+                        <a href="?read_status=unread" class="inline-flex items-center px-3 py-1 bg-yellow-500 text-white text-xs font-medium rounded-full hover:bg-yellow-600 transition-colors">
+                            Voir les messages
+                        </a>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+
+        <!-- Filters -->
+        <div class="bg-white p-6 rounded-xl shadow-md mb-6 border border-gray-100">
+            <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                <i class="fas fa-filter mr-2 text-gray-600"></i>
+                Filtres de Recherche
+            </h3>
+            
+            <form method="get" class="grid grid-cols-1 md:grid-cols-3 gap-4" id="filter-form">
+                <!-- Subject Filter -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                        <i class="fas fa-tag mr-1"></i>Sujet
+                    </label>
+                    <select name="subject" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors">
+                        <option value="">Tous les sujets</option>
+                        <option value="question" {% if request.GET.subject == 'question' %}selected{% endif %}>
+                            📋 Question générale
+                        </option>
+                        <option value="technical" {% if request.GET.subject == 'technical' %}selected{% endif %}>
+                            🔧 Problème technique
+                        </option>
+                        <option value="partnership" {% if request.GET.subject == 'partnership' %}selected{% endif %}>
+                            🤝 Partenariat
+                        </option>
+                        <option value="other" {% if request.GET.subject == 'other' %}selected{% endif %}>
+                            📝 Autre
+                        </option>
+                    </select>
+                </div>
+
+                <!-- Status Filter -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                        <i class="fas fa-eye mr-1"></i>Statut de Lecture
+                    </label>
+                    <select name="read_status" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors">
+                        <option value="">Tous les statuts</option>
+                        <option value="unread" {% if request.GET.read_status == 'unread' %}selected{% endif %}>
+                            ⏰ Non lus
+                        </option>
+                        <option value="read" {% if request.GET.read_status == 'read' %}selected{% endif %}>
+                            ✅ Lus
+                        </option>
+                    </select>
+                </div>
+
+                <!-- Search Filter -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                        <i class="fas fa-search mr-1"></i>Recherche Textuelle
+                    </label>
+                    <div class="relative">
+                        <input type="text" 
+                               name="search" 
+                               value="{{ request.GET.search|default:'' }}" 
+                               placeholder="Nom, email ou contenu du message..." 
+                               class="w-full px-4 py-2 pr-12 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors">
+                        <button type="submit" class="absolute right-2 top-1/2 transform -translate-y-1/2 p-2 text-gray-500 hover:text-blue-600 transition-colors">
+                            <i class="fas fa-search"></i>
+                        </button>
+                    </div>
+                </div>
+            </form>
+
+            <!-- Filter Actions -->
+            <div class="flex justify-between items-center mt-4 pt-4 border-t border-gray-200">
+                <div class="text-sm text-gray-600">
+                    {% if request.GET.subject or request.GET.read_status or request.GET.search %}
+                        <i class="fas fa-info-circle mr-1"></i>
+                        Filtres actifs - Affichage de {{ contact_messages.count }} résultat{{ contact_messages.count|pluralize }} sur {{ total_count }}
+                    {% else %}
+                        <i class="fas fa-list mr-1"></i>
+                        Affichage de tous les messages ({{ total_count }})
+                    {% endif %}
+                </div>
+                
+                <div class="flex space-x-2">
+                    <button type="submit" form="filter-form" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors action-btn">
+                        <i class="fas fa-filter mr-1"></i>Appliquer
+                    </button>
+                    
+                    {% if request.GET.subject or request.GET.read_status or request.GET.search %}
+                        <a href="{% url 'contact:reports_dashboard' %}" class="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors action-btn">
+                            <i class="fas fa-times mr-1"></i>Réinitialiser
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Messages Table -->
+        <div class="bg-white rounded-xl shadow-md overflow-hidden border border-gray-100">
+            <div class="px-6 py-4 bg-gray-50 border-b border-gray-200">
+                <h3 class="text-lg font-semibold text-gray-900 flex items-center">
+                    <i class="fas fa-table mr-2"></i>
+                    Liste des Messages
+                    <span class="ml-2 px-2 py-1 bg-blue-100 text-blue-800 text-xs font-medium rounded-full">
+                        {{ contact_messages.count }}
+                    </span>
+                </h3>
+            </div>
+            
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <i class="fas fa-user mr-1"></i>Contact
+                            </th>
+                            <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <i class="fas fa-tag mr-1"></i>Sujet
+                            </th>
+                            <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <i class="fas fa-comment mr-1"></i>Message
+                            </th>
+                            <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <i class="fas fa-eye mr-1"></i>Statut
+                            </th>
+                            <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <i class="fas fa-calendar mr-1"></i>Date
+                            </th>
+                            <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <i class="fas fa-cogs mr-1"></i>Actions
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        {% for message in contact_messages %}
+                        <tr class="message-row {% if not message.is_read %}bg-blue-50{% endif %}">
+                            <!-- Contact Info -->
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="flex items-center">
+                                    <div class="flex-shrink-0 h-10 w-10">
+                                        <div class="h-10 w-10 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center">
+                                            <span class="text-white font-semibold text-sm">{{ message.name.0|upper }}</span>
+                                        </div>
+                                    </div>
+                                    <div class="ml-4">
+                                        <div class="flex items-center">
+                                            {% if not message.is_read %}
+                                                <div class="w-2 h-2 bg-blue-500 rounded-full unread-indicator mr-2"></div>
+                                            {% endif %}
+                                            <div class="text-sm font-medium text-gray-900">{{ message.name }}</div>
+                                        </div>
+                                        <div class="text-sm text-gray-500">
+                                            <i class="fas fa-envelope mr-1"></i>{{ message.email }}
+                                        </div>
+                                    </div>
+                                </div>
+                            </td>
+
+                            <!-- Subject -->
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <span class="px-3 py-1 text-xs font-medium rounded-full inline-flex items-center
+                                       {% if message.subject == 'question' %}bg-green-100 text-green-800
+                                       {% elif message.subject == 'technical' %}bg-red-100 text-red-800
+                                       {% elif message.subject == 'partnership' %}bg-purple-100 text-purple-800
+                                       {% else %}bg-gray-100 text-gray-800{% endif %}">
+                                    {% if message.subject == 'question' %}
+                                        <i class="fas fa-question-circle mr-1"></i>
+                                    {% elif message.subject == 'technical' %}
+                                        <i class="fas fa-wrench mr-1"></i>
+                                    {% elif message.subject == 'partnership' %}
+                                        <i class="fas fa-handshake mr-1"></i>
+                                    {% else %}
+                                        <i class="fas fa-file-alt mr-1"></i>
+                                    {% endif %}
+                                    {{ message.get_subject_display }}
+                                </span>
+                            </td>
+
+                            <!-- Message Preview -->
+                            <td class="px-6 py-4">
+                                <div class="text-sm text-gray-900 max-w-xs">
+                                    <p class="truncate" title="{{ message.message }}">{{ message.message|truncatechars:80 }}</p>
+                                    {% if message.message|length > 80 %}
+                                        <button onclick="showFullMessage('{{ message.id }}')" class="text-blue-600 hover:text-blue-800 text-xs mt-1">
+                                            Voir plus...
+                                        </button>
+                                    {% endif %}
+                                </div>
+                            </td>
+
+                            <!-- Status -->
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                {% if message.is_read %}
+                                    <span class="px-3 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800 inline-flex items-center">
+                                        <i class="fas fa-check-circle mr-1"></i>Lu
+                                    </span>
+                                {% else %}
+                                    <span class="px-3 py-1 text-xs font-medium rounded-full bg-yellow-100 text-yellow-800 inline-flex items-center">
+                                        <i class="fas fa-clock mr-1"></i>Non lu
+                                    </span>
+                                {% endif %}
+                            </td>
+
+                            <!-- Date -->
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                <div class="flex flex-col">
+                                    <span class="font-medium">{{ message.created_at|date:"d/m/Y" }}</span>
+                                    <span class="text-xs text-gray-400">{{ message.created_at|date:"H:i" }}</span>
+                                </div>
+                            </td>
+
+                            <!-- Actions -->
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                <div class="flex space-x-2">
+                                    <!-- Reply Button -->
+                                    <a href="mailto:{{ message.email }}?subject=Re: {{ message.get_subject_display }}&body=Bonjour {{ message.name }},%0D%0A%0D%0ANous avons bien reçu votre message concernant: {{ message.get_subject_display }}%0D%0A%0D%0AMerci de nous avoir contactés.%0D%0A%0D%0ACordialement,%0D%0AÉquipe Talib Space" 
+                                       class="inline-flex items-center px-3 py-1 bg-blue-100 text-blue-700 text-xs font-medium rounded-md hover:bg-blue-200 transition-colors action-btn"
+                                       title="Répondre par email">
+                                        <i class="fas fa-reply mr-1"></i>Répondre
+                                    </a>
+                                    
+                                    <!-- Mark as Read Button -->
+                                    {% if not message.is_read %}
+                                        <a href="{% url 'contact:mark_as_read' message.id %}" 
+                                           class="inline-flex items-center px-3 py-1 bg-green-100 text-green-700 text-xs font-medium rounded-md hover:bg-green-200 transition-colors action-btn"
+                                           title="Marquer comme lu">
+                                            <i class="fas fa-check mr-1"></i>Marquer lu
+                                        </a>
+                                    {% endif %}
+                                    
+                                    <!-- View Details Button -->
+                                    <button onclick="showMessageDetails('{{ message.id }}')" 
+                                            class="inline-flex items-center px-3 py-1 bg-gray-100 text-gray-700 text-xs font-medium rounded-md hover:bg-gray-200 transition-colors action-btn"
+                                            title="Voir les détails">
+                                        <i class="fas fa-eye mr-1"></i>Détails
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="px-6 py-12 text-center text-gray-500">
+                                <div class="flex flex-col items-center animate-fade-in">
+                                    <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+                                        <i class="fas fa-inbox text-gray-400 text-2xl"></i>
+                                    </div>
+                                    <h3 class="text-lg font-medium text-gray-900 mb-2">Aucun message trouvé</h3>
+                                    <p class="text-gray-500 mb-4">
+                                        {% if request.GET.subject or request.GET.read_status or request.GET.search %}
+                                            Aucun message ne correspond aux filtres sélectionnés.
+                                        {% else %}
+                                            Aucun message de contact n'a été reçu pour le moment.
+                                        {% endif %}
+                                    </p>
+                                    {% if request.GET.subject or request.GET.read_status or request.GET.search %}
+                                        <a href="{% url 'contact:reports_dashboard' %}" class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                                            <i class="fas fa-list mr-2"></i>Voir tous les messages
+                                        </a>
+                                    {% else %}
+                                        <a href="{% url 'contact:contact' %}" class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                                            <i class="fas fa-plus mr-2"></i>Tester le formulaire
+                                        </a>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Footer Actions -->
+        <div class="mt-8 flex flex-col sm:flex-row justify-between items-center gap-4 p-6 bg-white rounded-xl shadow-md border border-gray-100">
+            <div class="flex flex-wrap gap-3">
+                
+                {% if user.is_superuser %}
+                    <a href="/admin/contact/contactmessage/" 
+                       class="inline-flex items-center px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors action-btn">
+                        <i class="fas fa-cog mr-2"></i>Admin Django
+                    </a>
+                {% endif %}
+            </div>
+            
+            <div class="text-sm text-gray-600 flex items-center">
+                <i class="fas fa-chart-pie mr-2"></i>
+                <span class="font-medium">
+                    Total: {{ total_count|default:0 }} message{{ total_count|default:0|pluralize }}
+                    {% if unread_count > 0 %}
+                        <span class="text-yellow-600 font-semibold ml-2">
+                            ({{ unread_count }} non lu{{ unread_count|pluralize }})
+                        </span>
+                    {% endif %}
+                </span>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-gradient-to-r from-gray-900 to-black text-white pt-16 pb-8 mt-16">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-12">
+                <!-- Product -->
+                <div>
+                    <h3 class="text-lg font-semibold mb-4 text-white">PRODUCT</h3>
+                    <ul class="space-y-3">
+                        <li><a href="#" class="text-gray-300 hover:text-white transition text-sm flex items-center"><i class="fas fa-home mr-2"></i>Home</a></li>
+                        <li><a href="#" class="text-gray-300 hover:text-white transition text-sm flex items-center"><i class="fas fa-map-marker-alt mr-2"></i>Browse by State</a></li>
+                        <li><a href="#" class="text-gray-300 hover:text-white transition text-sm flex items-center"><i class="fas fa-user-circle mr-2"></i>My Account</a></li>
+                    </ul>
+                </div>
+                
+                <!-- Resources -->
+                <div>
+                    <h3 class="text-lg font-semibold mb-4 text-white">RESOURCES</h3>
+                    <ul class="space-y-3">
+                        <li><a href="#" class="text-gray-300 hover:text-white transition text-sm flex items-center"><i class="fas fa-info-circle mr-2"></i>About</a></li>
+                        <li><a href="#" class="text-gray-300 hover:text-white transition text-sm flex items-center"><i class="fas fa-question-circle mr-2"></i>How It Works</a></li>
+                        <li><a href="#" class="text-gray-300 hover:text-white transition text-sm flex items-center"><i class="fas fa-question mr-2"></i>FAQ</a></li>
+                        <li><a href="#" class="text-gray-300 hover:text-white transition text-sm flex items-center"><i class="fas fa-star mr-2"></i>Testimonials</a></li>
+                    </ul>
+                </div>
+                
+                <!-- Legal -->
+                <div>
+                    <h3 class="text-lg font-semibold mb-4 text-white">RESOURCES</h3>
+                    <ul class="space-y-3">
+                        <li><a href="#" class="text-gray-300 hover:text-white transition text-sm flex items-center"><i class="fas fa-shield-alt mr-2"></i>Privacy</a></li>
+                        <li><a href="#" class="text-gray-300 hover:text-white transition text-sm flex items-center"><i class="fas fa-file-contract mr-2"></i>Terms</a></li>
+                        <li><a href="{% url 'contact:contact' %}" class="text-gray-300 hover:text-white transition text-sm flex items-center"><i class="fas fa-envelope mr-2"></i>Contact</a></li>
+                    </ul>
+                </div>
+                
+                <!-- Connect -->
+                <div>
+                    <h3 class="text-lg font-semibold mb-4 text-white">CONNECT</h3>
+                    <div class="flex space-x-4">
+                        <a href="#" class="text-gray-300 hover:text-white transition-colors p-2 rounded-full hover:bg-gray-700">
+                            <i class="fab fa-instagram text-xl"></i>
+                        </a>
+                        <a href="#" class="text-gray-300 hover:text-white transition-colors p-2 rounded-full hover:bg-gray-700">
+                            <i class="fab fa-facebook text-xl"></i>
+                        </a>
+                        <a href="#" class="text-gray-300 hover:text-white transition-colors p-2 rounded-full hover:bg-gray-700">
+                            <i class="fab fa-twitter text-xl"></i>
+                        </a>
+                        <a href="#" class="text-gray-300 hover:text-white transition-colors p-2 rounded-full hover:bg-gray-700">
+                            <i class="fab fa-discord text-xl"></i>
+                        </a>
+                    </div>
+                    
+                    <!-- Newsletter -->
+                    <div class="mt-6">
+                        <h4 class="text-sm font-semibold mb-2">Newsletter</h4>
+                        <div class="flex">
+                            <input type="email" placeholder="Votre email" class="flex-1 px-3 py-2 text-sm bg-gray-800 border border-gray-700 rounded-l-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <button class="px-4 py-2 bg-blue-600 text-white rounded-r-md hover:bg-blue-700 transition-colors">
+                                <i class="fas fa-paper-plane"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Copyright -->
+            <div class="border-t border-gray-700 pt-8 text-center">
+                <div class="flex flex-col md:flex-row justify-center items-center space-y-2 md:space-y-0 md:space-x-6 text-sm text-gray-400">
+                    <a href="#" class="hover:text-white transition">Privacy Policy</a>
+                    <a href="#" class="hover:text-white transition">Terms of Service</a>
+                    <span>© 2025 Ilias Ahmed - Talib Space. All rights reserved.</span>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Django Messages Display -->
+    {% if messages %}
+        <div class="fixed top-4 right-4 z-50 space-y-3" id="messages-container">
+            {% for message in messages %}
+                <div class="message-alert p-4 rounded-lg shadow-lg max-w-sm animate-slide-in border-l-4 
+                           {% if message.tags == 'success' %}bg-green-50 border-green-400 text-green-700
+                           {% elif message.tags == 'error' %}bg-red-50 border-red-400 text-red-700
+                           {% elif message.tags == 'warning' %}bg-yellow-50 border-yellow-400 text-yellow-700
+                           {% else %}bg-blue-50 border-blue-400 text-blue-700{% endif %}">
+                    <div class="flex items-start">
+                        <div class="flex-shrink-0">
+                            {% if message.tags == 'success' %}
+                                <i class="fas fa-check-circle text-green-500"></i>
+                            {% elif message.tags == 'error' %}
+                                <i class="fas fa-exclamation-circle text-red-500"></i>
+                            {% elif message.tags == 'warning' %}
+                                <i class="fas fa-exclamation-triangle text-yellow-500"></i>
+                            {% else %}
+                                <i class="fas fa-info-circle text-blue-500"></i>
+                            {% endif %}
+                        </div>
+                        <div class="ml-3 flex-1">
+                            <p class="text-sm font-medium">{{ message }}</p>
+                        </div>
+                        <button onclick="this.parentElement.parentElement.remove()" class="ml-2 text-gray-400 hover:text-gray-600 transition-colors">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    <!-- JavaScript -->
+    <script>
+        // User dropdown functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const userMenuButton = document.getElementById('user-menu-button');
+            const userDropdown = document.getElementById('user-dropdown');
+            const mobileMenuButton = document.getElementById('mobile-menu-button');
+            const mobileMenu = document.getElementById('mobile-menu');
+
+            // User menu toggle
+            if (userMenuButton && userDropdown) {
+                userMenuButton.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    
+                    userDropdown.classList.toggle('hidden');
+                    userDropdown.classList.toggle('opacity-0');
+                    userDropdown.classList.toggle('scale-95');
+                });
+
+                // Close dropdown when clicking outside
+                document.addEventListener('click', function(event) {
+                    if (!userMenuButton.contains(event.target) && !userDropdown.contains(event.target)) {
+                        userDropdown.classList.add('hidden');
+                        userDropdown.classList.add('opacity-0');
+                        userDropdown.classList.add('scale-95');
+                    }
+                });
+            }
+
+            // Mobile menu toggle
+            if (mobileMenuButton && mobileMenu) {
+                mobileMenuButton.addEventListener('click', function() {
+                    mobileMenu.classList.toggle('hidden');
+                });
+            }
+
+            // Auto-hide messages after 8 seconds
+            setTimeout(function() {
+                const messageAlerts = document.querySelectorAll('.message-alert');
+                messageAlerts.forEach(function(alert) {
+                    alert.style.transition = 'opacity 0.5s ease-out, transform 0.5s ease-out';
+                    alert.style.opacity = '0';
+                    alert.style.transform = 'translateX(100%)';
+                    setTimeout(function() {
+                        if (alert.parentElement) {
+                            alert.remove();
+                        }
+                    }, 500);
+                });
+            }, 8000);
+
+            // Search form auto-submit on Enter
+            const searchInput = document.querySelector('input[name="search"]');
+            if (searchInput) {
+                searchInput.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') {
+                        this.closest('form').submit();
+                    }
+                });
+            }
+        });
+
+        // Show full message content
+        function showFullMessage(messageId) {
+            // This would typically open a modal or expand the content
+            // For now, we'll show an alert (you can implement a proper modal)
+            alert('Fonction à implémenter: Afficher le message complet #' + messageId);
+        }
+
+        // Show message details
+        function showMessageDetails(messageId) {
+            // This would open a detailed view
+            alert('Fonction à implémenter: Afficher les détails du message #' + messageId);
+        }
+
+        // Smooth scroll to top
+        function scrollToTop() {
+            window.scrollTo({
+                top: 0,
+                behavior: 'smooth'
+            });
+        }
+
+        // Add scroll to top button if page is long
+        if (document.body.scrollHeight > window.innerHeight * 2) {
+            const scrollButton = document.createElement('button');
+            scrollButton.innerHTML = '<i class="fas fa-chevron-up"></i>';
+            scrollButton.className = 'fixed bottom-6 right-6 w-12 h-12 bg-blue-600 text-white rounded-full shadow-lg hover:bg-blue-700 transition-colors z-40';
+            scrollButton.style.display = 'none';
+            scrollButton.onclick = scrollToTop;
+            document.body.appendChild(scrollButton);
+
+            window.addEventListener('scroll', function() {
+                if (window.pageYOffset > 300) {
+                    scrollButton.style.display = 'block';
+                } else {
+                    scrollButton.style.display = 'none';
+                }
+            });
+        }
+    </script>
+</body>
+</html>

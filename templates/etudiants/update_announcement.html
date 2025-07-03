@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Update Announcement - Talib Space</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <style>
+        .dropdown-enter {
+            opacity: 0;
+            transform: translateY(-10px);
+        }
+        .dropdown-enter-active {
+            opacity: 1;
+            transform: translateY(0);
+            transition: opacity 200ms, transform 200ms;
+        }
+        .dropdown-exit {
+            opacity: 1;
+        }
+        .dropdown-exit-active {
+            opacity: 0;
+            transform: translateY(-10px);
+            transition: opacity 200ms, transform 200ms;
+        }
+        input, textarea, select {
+            width: 100%;
+            padding: 0.5rem 0.75rem;
+            border: 1px solid #d1d5db;
+            border-radius: 0.375rem;
+            box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+        }
+        input:focus, textarea:focus, select:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 2px #bfdbfe;
+        }
+        input[type="checkbox"] {
+            height: 1rem;
+            width: 1rem;
+            color: #3b82f6;
+            border-color: #d1d5db;
+            border-radius: 0.25rem;
+        }
+        input[type="file"] {
+            width: 100%;
+            font-size: 0.875rem;
+            color: #6b7280;
+        }
+        input[type="file"]::file-selector-button {
+            margin-right: 1rem;
+            padding: 0.5rem 1rem;
+            border-radius: 0.375rem;
+            border: 0;
+            font-size: 0.875rem;
+            font-weight: 600;
+            background-color: #eff6ff;
+            color: #1d4ed8;
+        }
+        input[type="file"]::file-selector-button:hover {
+            background-color: #dbeafe;
+        }
+    </style>
+</head>
+<body class="h-full flex flex-col bg-gray-50">
+    
+    <nav class="w-full sticky top-0 z-50 bg-white shadow">
+    <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex justify-between items-center py-4">
+            <div class="flex items-center">
+                <a href="{% url 'pages:homepage' %}" class="flex items-center">
+                    <img src="https://img.freepik.com/vecteurs-premium/creation-logo-education-scolaire-maison-modele-logo-logement-etudiant_825834-932.jpg"
+                        alt="Talib Space Logo" class="h-12 w-auto mr-3">
+                    <span class="text-2xl font-extrabold text-gray-800">talib space</span>
+                    <span class="ml-4 text-gray-600">| roomate founder</span>
+                </a>
+            </div>
+
+            <div class="hidden md:flex items-center space-x-8">
+                <a href="{% url 'pages:offers' %}" class="text-gray-600 hover:text-blue-500 transition duration-300">Offers</a>
+                <a href="{% url 'pages:howworks' %}" class="text-gray-600 hover:text-blue-500 transition duration-300">How Talib Space Works</a>
+                <a href="{% url 'pages:testo' %}" class="text-gray-600 hover:text-blue-500 transition duration-300">Testimonials</a>
+            </div>
+
+            {% if user.is_authenticated %}
+                <!-- Logged-in User Menu -->
+                <div class="flex items-center space-x-4">
+                    <div class="relative">
+                        <button id="user-menu-button" type="button" class="flex items-center space-x-2 focus:outline-none">
+                            <span class="text-gray-600">{{ user.name }}</span>
+                            <div class="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden">
+                                {% if user.profile_picture %}
+                                    <img src="{{ user.profile_picture.url }}" alt="Profile Photo" class="w-full h-full object-cover">
+                                {% else %}
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-500" viewBox="0 0 20 20" fill="currentColor">
+                                        <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd" />
+                                    </svg>
+                                {% endif %}
+                            </div>
+                        </button>
+                        
+                        <!-- Dropdown menu -->
+                        <div id="user-dropdown" class="hidden absolute right-0 mt-2 w-48 origin-top-right bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none transition-all duration-200 transform opacity-0 scale-95">
+                            {% if user.is_staff %}
+                                <!-- Menu pour les utilisateurs staff -->
+                                <div class="py-1" role="none">
+                                    <a href="{% url 'pages:admin_dashboard' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition duration-150">Dashboard</a>
+                                    <a href="{% url 'contact:reports_dashboard' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition duration-150">Reports</a>
+                                    <a href="{% url 'pages:profile' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition duration-150">Profile</a>
+                                    <a href="{% url 'pages:settings' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition duration-150">Settings</a>
+
+                                    <div class="border-t border-gray-100"></div>
+                                    <a href="{% url 'pages:logout' %}" class="block px-4 py-2 text-sm text-red-700 hover:bg-gray-100 transition duration-150">Sign out</a>
+                                </div>
+                            {% else %}
+                                <!-- Menu pour les utilisateurs normaux -->
+                                <div class="py-1" role="none">
+                                    <a href="{% url 'etudiants:my_announcements' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition duration-150">My Announcements</a>
+                                    <a href="{% url 'etudiants:my_favorites' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition duration-150">My Favorites</a>
+                                    <a href="{% url 'pages:profile' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition duration-150">Profile</a>
+                                    <a href="{% url 'inbox' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition duration-150">inbox</a>
+                                    
+                                    <div class="border-t border-gray-100"></div>
+                                    <a href="{% url 'pages:logout' %}" class="block px-4 py-2 text-sm text-red-700 hover:bg-gray-100 transition duration-150">Sign out</a>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            {% else %}
+                <!-- Visitor Menu -->
+                <div class="flex items-center space-x-4">
+                    <a href="{% url 'pages:login' %}" class="px-4 py-2 border border-blue-500 text-blue-500 rounded-md hover:bg-blue-50 transition duration-300">Sign In</a>
+                    <a href="{% url 'pages:register' %}" class="px-4 py-2 border border-green-500 text-green-500 rounded-md hover:bg-green-50 transition duration-300">Create Account</a>
+                </div>
+            {% endif %}
+
+            <!-- Mobile menu button (visible on small screens) -->
+            <div class="md:hidden flex items-center">
+                <button class="mobile-menu-button">
+                    <svg class="w-6 h-6 text-gray-500" fill="none" stroke-linecap="round" stroke-linejoin="round"
+                        stroke-width="2" viewBox="0 0 24 24" stroke="currentColor">
+                        <path d="M4 6h16M4 12h16M4 18h16"></path>
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<main>
+    {% load static %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="mb-6">
+        <a href="{% url 'etudiants:my_announcements' %}" class="inline-flex items-center text-blue-600 hover:text-blue-800">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+            </svg>
+            Back to My Announcements
+        </a>
+    </div>
+    
+    <div class="bg-white rounded-lg shadow-lg overflow-hidden">
+        <div class="p-6 border-b border-gray-200">
+            <h1 class="text-2xl font-bold text-gray-800">Update Announcement</h1>
+        </div>
+        
+        <form method="post" enctype="multipart/form-data" class="p-6">
+            {% csrf_token %}
+            
+            {% if form.errors %}
+            <div class="bg-red-50 border-l-4 border-red-500 p-4 mb-6">
+                <div class="flex">
+                    <div class="flex-shrink-0">
+                        <svg class="h-5 w-5 text-red-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+                        </svg>
+                    </div>
+                    <div class="ml-3">
+                        <h3 class="text-sm font-medium text-red-800">Please correct the following errors:</h3>
+                        <div class="mt-2 text-sm text-red-700">
+                            <ul class="list-disc pl-5 space-y-1">
+                            {% for field in form %}
+                                {% if field.errors %}
+                                {% for error in field.errors %}
+                                <li>{{ field.label }}: {{ error }}</li>
+                                {% endfor %}
+                                {% endif %}
+                            {% endfor %}
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            
+            <div class="grid grid-cols-1 gap-6">
+                <!-- Wider single column layout -->
+                <div class="space-y-6">
+                    <div>
+                        <label for="{{ form.title.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+                            {{ form.title.label }}
+                        </label>
+                        <input type="text" name="{{ form.title.name }}" id="{{ form.title.id_for_label }}" 
+                               value="{{ form.title.value|default_if_none:'' }}" 
+                               class="w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                    
+                    <div>
+                        <label for="{{ form.city.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+                            {{ form.city.label }}
+                        </label>
+                        <input type="text" name="{{ form.city.name }}" id="{{ form.city.id_for_label }}" 
+                               value="{{ form.city.value|default_if_none:'' }}" 
+                               class="w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                    
+                    <div>
+                        <label for="{{ form.price.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+                            {{ form.price.label }}
+                        </label>
+                        <input type="number" name="{{ form.price.name }}" id="{{ form.price.id_for_label }}" 
+                               value="{{ form.price.value|default_if_none:'' }}" 
+                               class="w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                    
+                    <div>
+                        <label for="{{ form.room_type.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+                            {{ form.room_type.label }}
+                        </label>
+                        <select name="{{ form.room_type.name }}" id="{{ form.room_type.id_for_label }}" 
+                                class="w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                            {% for choice in form.room_type.field.choices %}
+                            <option value="{{ choice.0 }}" {% if form.room_type.value == choice.0 %}selected{% endif %}>
+                                {{ choice.1 }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div>
+                        <label for="{{ form.gender_preference.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+                            {{ form.gender_preference.label }}
+                        </label>
+                        <select name="{{ form.gender_preference.name }}" id="{{ form.gender_preference.id_for_label }}" 
+                                class="w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                            {% for choice in form.gender_preference.field.choices %}
+                            <option value="{{ choice.0 }}" {% if form.gender_preference.value == choice.0 %}selected{% endif %}>
+                                {{ choice.1 }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div>
+                        <label for="{{ form.description.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+                            {{ form.description.label }}
+                        </label>
+                        <textarea name="{{ form.description.name }}" id="{{ form.description.id_for_label }}" 
+                                  rows="4" class="w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">{{ form.description.value|default_if_none:'' }}</textarea>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            {{ form.amenities.label }}
+                        </label>
+                        <div class="grid grid-cols-2 gap-2">
+                            {% for choice in form.amenities.field.choices %}
+                            <div class="flex items-center">
+                                <input type="checkbox" name="amenities" value="{{ choice.0 }}" id="id_amenities_{{ forloop.counter0 }}" 
+                                    {% if choice.0 in form.instance.get_amenities_list %}checked{% endif %}
+                                    class="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
+                                <label for="id_amenities_{{ forloop.counter0 }}" class="ml-2 block text-sm text-gray-700">
+                                    {{ choice.1 }}
+                                </label>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+                
+           <!-- Image Upload Section -->
+<div class="mt-6">
+    <label class="block text-sm font-medium text-gray-700 mb-2">
+        Photos
+    </label>
+    
+    <!-- Current Photos -->
+    {% if images %}
+    <div class="mb-6">
+        <label class="block text-sm font-medium text-gray-700 mb-2">
+            Current Photos
+        </label>
+        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            {% for image in images %}
+            <div class="relative group border rounded-md overflow-hidden">
+                <img src="{{ image.image.url }}" alt="Announcement photo" class="h-48 w-full object-cover">
+                <div class="absolute inset-0 bg-black bg-opacity-30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                    <label class="inline-flex items-center p-2 bg-white rounded">
+                        <input type="checkbox" name="delete_images" value="{{ image.id }}" class="h-5 w-5 text-red-600 border-gray-300 rounded focus:ring-red-500">
+                        <span class="ml-2 text-gray-800 font-medium">Delete</span>
+                    </label>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+    
+    <!-- New Photo Upload -->
+    <div class="mb-6">
+        <label class="block text-sm font-medium text-gray-700 mb-2">
+            Add More Photos
+        </label>
+        <label for="file-upload" class="cursor-pointer">
+            <div class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md bg-gray-50 hover:bg-gray-100 transition-colors duration-200">
+                <div class="space-y-1 text-center">
+                    <svg class="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48" aria-hidden="true">
+                        <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                    </svg>
+                    <div class="flex text-sm text-gray-600 justify-center">
+                        <span class="relative bg-white rounded-md font-medium text-blue-600 hover:text-blue-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-blue-500">
+                            Click to upload
+                        </span>
+                        <p class="pl-1">or drag and drop</p>
+                    </div>
+                    <p class="text-xs text-gray-500">
+                        PNG, JPG up to 5MB
+                    </p>
+                </div>
+            </div>
+        </label>
+        <input id="file-upload" name="images" type="file" class="sr-only" multiple>
+    </div>
+</div>
+            
+            <div class="mt-6 flex justify-end">
+                <a href="{% url 'etudiants:my_announcements' %}" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium py-2 px-6 rounded-md shadow-sm transition duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 mr-3">
+                    Cancel
+                </a>
+                <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-6 rounded-md shadow-sm transition duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                    Update Announcement
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    // Enhance file upload display
+    document.getElementById('file-upload').addEventListener('change', function(e) {
+        const fileName = e.target.files[0]?.name || 'No file selected';
+        const uploadText = document.querySelector('.file-upload-text');
+        if (uploadText) {
+            uploadText.textContent = fileName;
+        }
+    });
+</script>
+{% endblock %}
+</main>
+
+    <footer class="bg-black text-white pt-12 pb-6 px-4 sm:px-6 lg:px-8">
+        <div class="max-w-7xl mx-auto">
+            <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6 mb-8">
+                <div>
+                    <h3 class="text-base font-semibold mb-3">PRODUCT</h3>
+                    <ul class="space-y-1.5">
+                        <li><a href="#" class="text-gray-400 hover:text-white transition text-sm">Home</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white transition text-sm">Browse by State</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white transition text-sm">My Account</a></li>
+                    </ul>
+                </div>
+        
+                <div>
+                    <h3 class="text-base font-semibold mb-3">RESOURCES</h3>
+                    <ul class="space-y-1.5">
+                        <li><a href="#" class="text-gray-400 hover:text-white transition text-sm">About</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white transition text-sm">How It Works</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white transition text-sm">FAQ</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white transition text-sm">Testimonials</a></li>
+                    </ul>
+                </div>
+        
+                <div>
+                    <h3 class="text-base font-semibold mb-3">LEGAL</h3>
+                    <ul class="space-y-1.5">
+                        <li><a href="#" class="text-gray-400 hover:text-white transition text-sm">Privacy</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white transition text-sm">Terms</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white transition text-sm">Contact</a></li>
+                    </ul>
+                </div>
+        
+                <div>
+                    <h3 class="text-base font-semibold mb-3">CONNECT</h3>
+                    <div class="flex space-x-3">
+                        <a href="#" class="text-gray-400 hover:text-white transition">
+                            <span class="sr-only">Instagram</span>
+                            <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/>
+                            </svg>
+                        </a>
+                        <a href="#" class="text-gray-400 hover:text-white transition">
+                            <span class="sr-only">Facebook</span>
+                            <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
+                                <path fill-rule="evenodd" d="M22 12c0-5.523-4.477-10-10-10S2 6.477 2 12c0 4.991 3.657 9.128 8.438 9.878v-6.987h-2.54V12h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V12h2.773l-.443 2.89h-2.33v6.988C18.343 21.128 22 16.991 22 12z" clip-rule="evenodd"/>
+                            </svg>
+                        </a>
+                        <a href="#" class="text-gray-400 hover:text-white transition">
+                            <span class="sr-only">Twitter</span>
+                            <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M8.29 20.251c7.547 0 11.675-6.253 11.675-11.675 0-.178 0-.355-.012-.53A8.348 8.348 0 0022 5.92a8.19 8.19 0 01-2.357.646 4.118 4.118 0 001.804-2.27 8.224 8.224 0 01-2.605.996 4.107 4.107 0 00-6.993 3.743 11.65 11.65 0 01-8.457-4.287 4.106 4.106 0 001.27 5.477A4.072 4.072 0 012.8 9.713v.052a4.105 4.105 0 003.292 4.022 4.095 4.095 0 01-1.853.07 4.108 4.108 0 003.834 2.85A8.233 8.233 0 012 18.407a11.616 11.616 0 006.29 1.84"/>
+                            </svg>
+                        </a>
+                        <a href="#" class="text-gray-400 hover:text-white transition">
+                            <span class="sr-only">Discord</span>
+                            <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M20.317 4.37a19.791 19.791 0 00-4.885-1.515.074.074 0 00-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 00-5.487 0 12.64 12.64 0 00-.617-1.25.077.077 0 00-.079-.037A19.736 19.736 0 003.677 4.37a.07.07 0 00-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 00.031.057 19.9 19.9 0 005.993 3.03.078.078 0 00.084-.028c.462-.63.874-1.295 1.226-1.994a.076.076 0 00-.041-.106 13.107 13.107 0 01-1.872-.892.077.077 0 01-.008-.128 10.2 10.2 0 00.372-.292.074.074 0 01.077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 01.078.01c.12.098.246.198.373.292a.077.077 0 01-.006.127 12.299 12.299 0 01-1.873.892.077.077 0 00-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 00.084.028 19.839 19.839 0 006.002-3.03.077.077 0 00.032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 00-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"/>
+                            </svg>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        
+            <div class="border-t border-gray-800 pt-4 text-center text-gray-400 text-xs">
+                <div class="flex flex-col md:flex-row justify-center items-center space-y-1 md:space-y-0 md:space-x-4">
+                    <a href="#" class="hover:text-white transition">Privacy Policy</a>
+                    <a href="#" class="hover:text-white transition">Terms of Service</a>
+                    <span>© 2025 Ilias ahmed. All rights reserved.</span>
+                </div>
+            </div>
+        </div>
+    </footer>
+  <script>
+        // Add this JavaScript to your welcome page
+document.addEventListener('DOMContentLoaded', function() {
+    // Get the city search form elements
+    const cityInput = document.querySelector('input[placeholder*="Enter your Citie"]');
+    const viewMatchesButton = document.querySelector('button:contains("View Matches")');
+    
+    // Handle form submission
+    function handleCitySearch() {
+        const cityName = cityInput.value.trim();
+        
+        if (cityName) {
+            // Create the URL with city parameter
+            const baseUrl = "{% url 'pages:offers' %}";
+            const params = new URLSearchParams({ city: cityName });
+            const redirectUrl = `${baseUrl}?${params.toString()}`;
+            
+            // Redirect to offers page with city filter
+            window.location.href = redirectUrl;
+        } else {
+            // If no city entered, go to offers page without filter
+            window.location.href = "{% url 'pages:offers' %}";
+        }
+    }
+    
+    // Add click event to the button
+    if (viewMatchesButton) {
+        viewMatchesButton.addEventListener('click', function(e) {
+            e.preventDefault();
+            handleCitySearch();
+        });
+    }
+    
+    // Add Enter key support to the input field
+    if (cityInput) {
+        cityInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                handleCitySearch();
+            }
+        });
+    }
+});
+    </script>
+    <script>
+        const userMenuButton = document.getElementById('user-menu-button');
+        const userDropdown = document.getElementById('user-dropdown');
+        let isOpen = false;
+
+        userMenuButton.addEventListener('click', () => {
+            isOpen = !isOpen;
+            
+            if (isOpen) {
+                userDropdown.classList.remove('hidden');
+                setTimeout(() => {
+                    userDropdown.classList.remove('opacity-0', 'scale-95');
+                    userDropdown.classList.add('opacity-100', 'scale-100');
+                }, 10);
+            } else {
+                userDropdown.classList.remove('opacity-100', 'scale-100');
+                userDropdown.classList.add('opacity-0', 'scale-95');
+                setTimeout(() => {
+                    userDropdown.classList.add('hidden');
+                }, 200);
+            }
+        });
+
+        document.addEventListener('click', (event) => {
+            if (!userMenuButton.contains(event.target) ){
+                userDropdown.classList.remove('opacity-100', 'scale-100');
+                userDropdown.classList.add('opacity-0', 'scale-95');
+                setTimeout(() => {
+                    userDropdown.classList.add('hidden');
+                    isOpen = false;
+                }, 200);
+            }
+        });
+    </script>
+</body>
+</html>

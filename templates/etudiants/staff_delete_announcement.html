@@ -1,0 +1,337 @@
+
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+    .delete-card {
+        background: white;
+        border-radius: 15px;
+        padding: 2rem;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        max-width: 600px;
+        margin: 0 auto;
+    }
+    
+    .delete-button {
+        background: linear-gradient(135deg, #ff4757 0%, #c44569 100%);
+        color: white;
+        padding: 1rem 2rem;
+        border-radius: 50px;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        border: none;
+        cursor: pointer;
+    }
+    
+    .delete-button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(255, 71, 87, 0.4);
+        color: white;
+        text-decoration: none;
+    }
+    
+    .cancel-button {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 1rem 2rem;
+        border-radius: 50px;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+    
+    .cancel-button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        color: white;
+        text-decoration: none;
+    }
+    
+    .warning-icon {
+        background: linear-gradient(135deg, #ff9f43 0%, #ff6b6b 100%);
+        color: white;
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 2rem;
+        box-shadow: 0 4px 15px rgba(255, 107, 107, 0.3);
+    }
+    
+    .announcement-preview {
+        background: #f8f9fa;
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin: 1.5rem 0;
+        border-left: 4px solid #ff4757;
+    }
+
+    /* Toast notification styles */
+    .toast-container {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 9999;
+    }
+
+    .toast {
+        min-width: 300px;
+        padding: 15px 20px;
+        margin-bottom: 10px;
+        border-radius: 8px;
+        color: white;
+        font-family: Arial, sans-serif;
+        font-size: 14px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        opacity: 0;
+        transform: translateX(100%);
+        transition: all 0.3s ease-in-out;
+        position: relative;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .toast.show {
+        opacity: 1;
+        transform: translateX(0);
+    }
+
+    .toast.success {
+        background: linear-gradient(135deg, #28a745, #20c997);
+    }
+
+    .toast.error {
+        background: linear-gradient(135deg, #dc3545, #e74c3c);
+    }
+
+    .toast.warning {
+        background: linear-gradient(135deg, #ffc107, #ffb300);
+        color: #333;
+    }
+
+    .toast.info {
+        background: linear-gradient(135deg, #17a2b8, #00bcd4);
+    }
+
+    .toast-icon {
+        font-size: 18px;
+        font-weight: bold;
+    }
+
+    .toast-close {
+        position: absolute;
+        top: 5px;
+        right: 10px;
+        background: none;
+        border: none;
+        color: inherit;
+        font-size: 16px;
+        cursor: pointer;
+        opacity: 0.7;
+    }
+
+    .toast-close:hover {
+        opacity: 1;
+    }
+
+    .toast-progress {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        height: 3px;
+        background: rgba(255, 255, 255, 0.3);
+        border-radius: 0 0 8px 8px;
+        animation: progress 5s linear;
+    }
+
+    @keyframes progress {
+        from { width: 100%; }
+        to { width: 0%; }
+    }
+</style>
+
+
+{% block content %}
+<!-- Toast container -->
+<div class="toast-container" id="toastContainer"></div>
+
+<div class="min-h-screen bg-gradient-to-br from-red-50 via-white to-orange-50 py-8">
+    <div class="container mx-auto px-4">
+        
+        <!-- Back to announcement link -->
+        <div class="mb-6">
+            <a href="{% url 'etudiants:offer_detail' announcement.pk %}" class="inline-flex items-center text-blue-600 hover:text-blue-800">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                </svg>
+                Retour à l'annonce
+            </a>
+        </div>
+        
+        <div class="delete-card">
+            <div class="warning-icon">
+                <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.664-.833-2.464 0L4.35 15.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                </svg>
+            </div>
+            
+            <h1 class="text-3xl font-bold text-center text-gray-800 mb-6">
+                Supprimer cette annonce
+            </h1>
+            
+            <div class="text-center mb-6">
+                <p class="text-lg text-gray-600 mb-2">
+                    Vous êtes sur le point de supprimer définitivement cette annonce.
+                </p>
+                <p class="text-sm text-red-600 font-medium">
+                    ⚠️ Cette action ne peut pas être annulée.
+                </p>
+            </div>
+
+            <!-- Announcement Preview -->
+            <div class="announcement-preview">
+                <h3 class="text-xl font-semibold text-gray-800 mb-3">Détails de l'annonce :</h3>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <strong>Titre :</strong> {{ announcement.title }}
+                    </div>
+                    <div>
+                        <strong>Ville :</strong> {{ announcement.city }}
+                    </div>
+                    <div>
+                        <strong>Prix :</strong> €{{ announcement.price }}/mois
+                    </div>
+                    <div>
+                        <strong>Type :</strong> {{ announcement.get_room_type_display }}
+                    </div>
+                </div>
+                
+                <div class="mb-4">
+                    <strong>Propriétaire :</strong> {{ announcement.user.name }} {{ announcement.user.surname }} ({{ announcement.user.email }})
+                </div>
+                
+                <div class="mb-4">
+                    <strong>Publié le :</strong> {{ announcement.created_at|date:"d F Y à H:i" }}
+                </div>
+                
+                {% if announcement.description %}
+                    <div>
+                        <strong>Description :</strong>
+                        <p class="text-gray-600 mt-1">{{ announcement.description|truncatewords:30 }}</p>
+                    </div>
+                {% endif %}
+            </div>
+
+            <!-- Staff Information -->
+            <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                <div class="flex items-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-blue-600 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <span class="text-blue-800 font-medium">Action administrateur</span>
+                </div>
+                <p class="text-blue-700 text-sm mt-1">
+                    En tant qu'administrateur, vous avez le pouvoir de supprimer n'importe quelle annonce. Cette action sera enregistrée dans les logs du système.
+                </p>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                <form method="POST" class="inline" onsubmit="return confirmDelete()">
+                    {% csrf_token %}
+                    <button type="submit" class="delete-button">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                        </svg>
+                        Confirmer la suppression
+                    </button>
+                </form>
+                
+                <a href="{% url 'etudiants:offer_detail' announcement.pk %}" class="cancel-button">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                    Annuler
+                </a>
+            </div>
+            
+            <div class="text-center mt-6">
+                <p class="text-sm text-gray-500">
+                    Connecté en tant que : <strong>{{ user.name }} {{ user.surname }}</strong> (Administrateur)
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function confirmDelete() {
+        return confirm('Êtes-vous absolument certain de vouloir supprimer cette annonce ?\n\nCette action supprimera définitivement l\'annonce "{{ announcement.title|escapejs }}" et toutes ses données associées.\n\nCette action ne peut pas être annulée.');
+    }
+
+    // Toast notification functions
+    function showToast(message, type = 'info', duration = 5000) {
+        const toastContainer = document.getElementById('toastContainer');
+        
+        const toast = document.createElement('div');
+        toast.className = `toast ${type}`;
+        
+        const icons = {
+            success: '✓',
+            error: '✕',
+            warning: '⚠',
+            info: 'ℹ'
+        };
+        
+        toast.innerHTML = `
+            <span class="toast-icon">${icons[type] || icons.info}</span>
+            <span class="toast-message">${message}</span>
+            <button class="toast-close" onclick="closeToast(this)">&times;</button>
+            <div class="toast-progress"></div>
+        `;
+        
+        toastContainer.appendChild(toast);
+        
+        setTimeout(() => {
+            toast.classList.add('show');
+        }, 100);
+        
+        setTimeout(() => {
+            closeToast(toast.querySelector('.toast-close'));
+        }, duration);
+    }
+
+    function closeToast(closeButton) {
+        const toast = closeButton.parentElement;
+        toast.classList.remove('show');
+        
+        setTimeout(() => {
+            if (toast.parentElement) {
+                toast.parentElement.removeChild(toast);
+            }
+        }, 300);
+    }
+
+    // Handle Django messages
+    {% if messages %}
+    document.addEventListener('DOMContentLoaded', function() {
+        setTimeout(function() {
+            {% for message in messages %}
+                showToast('{{ message|escapejs }}', '{{ message.tags }}');
+            {% endfor %}
+        }, 100);
+    });
+    {% endif %}
+</script>
+{% endblock %}

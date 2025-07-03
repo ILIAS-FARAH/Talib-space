@@ -1,0 +1,748 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Conversation | Talib Space</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .messages-container::-webkit-scrollbar {
+            width: 6px;
+        }
+        .messages-container::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        .messages-container::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 3px;
+        }
+        .messages-container::-webkit-scrollbar-thumb:hover {
+            background: #a1a1a1;
+        }
+        .quiz-response-container {
+            transition: all 0.3s ease;
+            border-left: 4px solid #3b82f6;
+        }
+        .quiz-toggle-btn {
+            transition: all 0.2s ease;
+        }
+        .quiz-toggle-btn:hover {
+            background-color: #f3f4f6;
+        }
+        .message-bubble {
+            transition: all 0.2s ease;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in {
+            animation: fadeIn 0.3s ease-out forwards;
+        }
+        
+        /* Styles pour le bouton accepter */
+        .accept-btn {
+            transition: all 0.3s ease;
+            background: linear-gradient(135deg, #10b981, #059669);
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+        }
+        .accept-btn:hover {
+            background: linear-gradient(135deg, #059669, #047857);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(16, 185, 129, 0.4);
+        }
+        .accept-btn:active {
+            transform: translateY(0);
+        }
+        
+        /* Styles pour l'annonce expirée */
+        .announcement-expired {
+            opacity: 0.6;
+            background-color: #f3f4f6 !important;
+            position: relative;
+        }
+        
+        .announcement-expired::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(156, 163, 175, 0.7);
+            border-radius: 0.5rem;
+            z-index: 1;
+        }
+        
+        .announcement-expired::after {
+            content: 'EXPIRÉ';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: rgba(107, 114, 128, 0.9);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 0.375rem;
+            font-weight: bold;
+            font-size: 1rem;
+            letter-spacing: 0.1em;
+            z-index: 2;
+        }
+        
+        .announcement-expired .announcement-content {
+            filter: grayscale(100%);
+        }
+    </style>
+</head>
+<body class="h-full flex flex-col bg-gray-50">
+    <!-- Navigation -->
+  <nav class="w-full sticky top-0 z-50 bg-white shadow">
+    <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex justify-between items-center py-4">
+            <div class="flex items-center">
+                <a href="{% url 'pages:homepage' %}" class="flex items-center">
+                    <img src="https://img.freepik.com/vecteurs-premium/creation-logo-education-scolaire-maison-modele-logo-logement-etudiant_825834-932.jpg"
+                        alt="Talib Space Logo" class="h-12 w-auto mr-3">
+                    <span class="text-2xl font-extrabold text-gray-800">talib space</span>
+                    <span class="ml-4 text-gray-600">| roomate founder</span>
+                </a>
+            </div>
+
+            <div class="hidden md:flex items-center space-x-8">
+                <a href="{% url 'pages:offers' %}" class="text-gray-600 hover:text-blue-500 transition duration-300">Offers</a>
+                <a href="{% url 'pages:howworks' %}" class="text-gray-600 hover:text-blue-500 transition duration-300">How Talib Space Works</a>
+                <a href="{% url 'pages:testo' %}" class="text-gray-600 hover:text-blue-500 transition duration-300">Testimonials</a>
+            </div>
+
+            {% if user.is_authenticated %}
+                <!-- Logged-in User Menu -->
+                <div class="flex items-center space-x-4">
+                    <div class="relative">
+                        <button id="user-menu-button" type="button" class="flex items-center space-x-2 focus:outline-none">
+                            <span class="text-gray-600">{{ user.name }}</span>
+                            <div class="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden">
+                                {% if user.profile_picture %}
+                                    <img src="{{ user.profile_picture.url }}" alt="Profile Photo" class="w-full h-full object-cover">
+                                {% else %}
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-500" viewBox="0 0 20 20" fill="currentColor">
+                                        <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd" />
+                                    </svg>
+                                {% endif %}
+                            </div>
+                        </button>
+                        
+                        <!-- Dropdown menu -->
+                        <div id="user-dropdown" class="hidden absolute right-0 mt-2 w-48 origin-top-right bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none transition-all duration-200 transform opacity-0 scale-95">
+                            {% if user.is_staff %}
+                                <!-- Menu pour les utilisateurs staff -->
+                                <div class="py-1" role="none">
+                                    <a href="{% url 'pages:admin_dashboard' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition duration-150">Dashboard</a>
+                                    <a href="{% url 'contact:reports_dashboard' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition duration-150">Reports</a>
+                                    <a href="{% url 'pages:profile' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition duration-150">Profile</a>
+                                    <a href="{% url 'pages:settings' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition duration-150">Settings</a>
+
+                                    <div class="border-t border-gray-100"></div>
+                                    <a href="{% url 'pages:logout' %}" class="block px-4 py-2 text-sm text-red-700 hover:bg-gray-100 transition duration-150">Sign out</a>
+                                </div>
+                            {% else %}
+                                <!-- Menu pour les utilisateurs normaux -->
+                                <div class="py-1" role="none">
+                                    <a href="{% url 'etudiants:my_announcements' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition duration-150">My Announcements</a>
+                                    <a href="{% url 'etudiants:my_favorites' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition duration-150">My Favorites</a>
+                                    <a href="{% url 'pages:profile' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition duration-150">Profile</a>
+                                    <a href="{% url 'inbox' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition duration-150">inbox</a>
+                                    
+                                    <div class="border-t border-gray-100"></div>
+                                    <a href="{% url 'pages:logout' %}" class="block px-4 py-2 text-sm text-red-700 hover:bg-gray-100 transition duration-150">Sign out</a>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            {% else %}
+                <!-- Visitor Menu -->
+                <div class="flex items-center space-x-4">
+                    <a href="{% url 'pages:login' %}" class="px-4 py-2 border border-blue-500 text-blue-500 rounded-md hover:bg-blue-50 transition duration-300">Sign In</a>
+                    <a href="{% url 'pages:register' %}" class="px-4 py-2 border border-green-500 text-green-500 rounded-md hover:bg-green-50 transition duration-300">Create Account</a>
+                </div>
+            {% endif %}
+
+            <!-- Mobile menu button (visible on small screens) -->
+            <div class="md:hidden flex items-center">
+                <button class="mobile-menu-button">
+                    <svg class="w-6 h-6 text-gray-500" fill="none" stroke-linecap="round" stroke-linejoin="round"
+                        stroke-width="2" viewBox="0 0 24 24" stroke="currentColor">
+                        <path d="M4 6h16M4 12h16M4 18h16"></path>
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </div>
+</nav>
+    <main class="flex-1">
+        <div class="bg-gray-100 min-h-screen">
+            <div class="container mx-auto py-6 px-4 sm:px-6 lg:px-8">
+                <div class="bg-white rounded-lg shadow-lg overflow-hidden">
+                    <div class="grid grid-cols-1 md:grid-cols-3">
+                        <!-- Liste des conversations -->
+                        <div class="hidden md:block border-r border-gray-200 md:col-span-1">
+                            <div class="p-4 border-b border-gray-200">
+                                <h2 class="text-xl font-semibold text-gray-800">Messages</h2>
+                            </div>
+                            <div class="overflow-y-auto h-[calc(100vh-13rem)]">
+                                {% if conversations %}
+                                    {% for conv in conversations %}
+                                        <a href="{% url 'conversation_detail' conv.id %}" 
+                                           class="block p-4 border-b border-gray-200 hover:bg-blue-50 transition duration-150 {% if conv.id == conversation.id %}bg-blue-100{% elif conv.unread_count %}bg-blue-50{% endif %}">
+                                            <div class="flex items-center space-x-3">
+                                                <div class="relative flex-shrink-0">
+                                                    <div class="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center text-white font-semibold">
+                                                        {% if conv.other_participant.name %}
+                                                            {{ conv.other_participant.name|slice:":1" }}{% if conv.other_participant.surname %}{{ conv.other_participant.surname|slice:":1" }}{% endif %}
+                                                        {% else %}
+                                                            {{ conv.other_participant.username|slice:":1" }}
+                                                        {% endif %}
+                                                    </div>
+                                                </div>
+                                                <div class="min-w-0 flex-1">
+                                                    <p class="text-sm font-medium text-gray-900 truncate">
+                                                        {% if conv.other_participant.name %}
+                                                            {{ conv.other_participant.name }} {% if conv.other_participant.surname %}{{ conv.other_participant.surname }}{% endif %}
+                                                        {% else %}
+                                                            {{ conv.other_participant.username }}
+                                                        {% endif %}
+                                                    </p>
+                                                    <p class="text-sm text-gray-500 truncate">
+                                                        {% if conv.messages.last %}
+                                                            {{ conv.messages.last.content|truncatechars:30 }}
+                                                        {% endif %}
+                                                    </p>
+                                                </div>
+                                                <div class="flex flex-col items-end">
+                                                    {% if conv.messages.last %}
+                                                        <span class="text-xs text-gray-500">
+                                                            {{ conv.messages.last.timestamp|timesince }}
+                                                        </span>
+                                                    {% endif %}
+                                                    {% if conv.unread_count > 0 %}
+                                                        <span class="mt-1 inline-flex items-center justify-center h-5 w-5 rounded-full bg-blue-500 text-white text-xs">
+                                                            {{ conv.unread_count }}
+                                                        </span>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                        </a>
+                                    {% endfor %}
+                                {% else %}
+                                    <p class="p-4 text-gray-500">Aucune conversation</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <!-- Détail de la conversation -->
+                        <div class="md:col-span-2 flex flex-col h-[calc(100vh-10rem)]">
+                            <!-- En-tête de conversation -->
+                            <div class="p-4 border-b border-gray-200 flex items-center justify-between">
+                                <div class="flex items-center space-x-3">
+                                    <a href="{% url 'inbox' %}" class="md:hidden text-gray-500 hover:text-gray-700">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                                        </svg>
+                                    </a>
+                                    
+                                    <div class="relative flex-shrink-0">
+                                        <div class="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center text-white font-semibold">
+                                            {% if other_user.name %}
+                                                {{ other_user.name|slice:":1" }}{% if other_user.name %}{{ other_user.name|slice:":1" }}{% endif %}
+                                            {% else %}
+                                                {{ other_user.name|slice:":1" }}
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <h3 class="text-sm font-medium text-gray-900">
+                                            {% if other_user.name %}
+                                                {{ other_user.name }} {% if other_user.name %}{{ other_user.name }}{% endif %}
+                                            {% else %}
+                                                {{ other_user.name }}
+                                            {% endif %}
+                                        </h3>
+                                        <p class="text-xs text-gray-500" id="typing-indicator"></p>
+                                    </div>
+                                </div>
+                                
+                                <div class="flex items-center space-x-3">
+                                    {% if conversation.announcement %}
+                                        <!-- Bouton Accepter - visible seulement pour le créateur de l'annonce -->
+                                        {% if conversation.announcement.user == user and not conversation.announcement.is_accepted %}
+                                            <button 
+                                                id="accept-btn"
+                                                onclick="acceptAnnouncement('{{ conversation.announcement.id }}')"
+                                                class="accept-btn flex items-center space-x-2 px-4 py-2 text-white font-medium rounded-lg transition duration-300">
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                                                </svg>
+                                                <span>Accepter</span>
+                                            </button>
+                                        {% endif %}
+                                        
+                                        <a href="{% url 'etudiants:offer_detail' conversation.announcement.id %}" class="text-blue-600 text-sm hover:underline">
+                                            Voir l'annonce
+                                        </a>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <!-- Conteneur des messages -->
+                            <div class="flex-1 p-4 overflow-y-auto messages-container" id="messages-container">
+                                {% if has_quiz_responses %}
+                                    <!-- Section des réponses de quiz - Visible pour les deux utilisateurs -->
+                                    <div class="mb-6">
+                                        <div class="text-center mb-4">
+                                            <h3 class="text-lg font-semibold text-gray-800 mb-2">Réponses du Quiz de Compatibilité</h3>
+                                            <p class="text-sm text-gray-600">Les réponses des deux participants sont affichées ci-dessous</p>
+                                        </div>
+                                        
+                                        {% for response in quiz_responses %}
+                                            <div class="quiz-response-container bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-4 mb-4 border border-blue-200">
+                                                <div class="flex items-center justify-between mb-3">
+                                                    <div class="flex items-center space-x-3">
+                                                        <div class="w-10 h-10 {% if response.user.is_current_user %}bg-green-500{% else %}bg-blue-500{% endif %} rounded-full flex items-center justify-center text-white text-sm font-semibold">
+                                                            {{ response.user.name|slice:":1" }}
+                                                        </div>
+                                                        <div>
+                                                            <h4 class="text-sm font-semibold {% if response.user.is_current_user %}text-green-800{% else %}text-blue-800{% endif %}">
+                                                                Réponses de {{ response.user.name }}
+                                                                {% if response.user.is_current_user %}
+                                                                    <span class="text-xs text-green-600">(Vous)</span>
+                                                                {% endif %}
+                                                            </h4>
+                                                            <p class="text-xs text-gray-600">
+                                                                {{ response.submitted_at }} • {{ response.total_questions }} question{{ response.total_questions|pluralize }}
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                    <button 
+                                                        class="quiz-toggle-btn px-3 py-1 text-xs border border-blue-300 text-blue-700 rounded-md hover:bg-blue-100 transition duration-150"
+                                                        onclick="toggleQuizResponses('{{ response.id }}')"
+                                                        id="toggle-btn-{{ response.id }}">
+                                                        Masquer
+                                                    </button>
+                                                </div>
+                                                
+                                                <div id="quiz-content-{{ response.id }}" class="quiz-content">
+                                                    {% if response.responses %}
+                                                        <div class="space-y-3">
+                                                            {% for qa in response.responses %}
+                                                                <div class="bg-white rounded-lg p-3 border border-blue-200 hover:shadow-sm transition-shadow">
+                                                                    <div class="flex items-start space-x-2">
+                                                                        <span class="text-xs font-medium text-gray-500 bg-gray-100 rounded-full w-6 h-6 flex items-center justify-center mt-0.5">{{ qa.index }}</span>
+                                                                        <div class="flex-1">
+                                                                            <p class="text-sm font-medium text-gray-800 mb-1">{{ qa.question }}</p>
+                                                                            <p class="text-sm {% if response.user.is_current_user %}text-green-600{% else %}text-blue-600{% endif %} font-medium">{{ qa.answer }}</p>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            {% endfor %}
+                                                        </div>
+                                                    {% else %}
+                                                        <p class="text-sm text-gray-600 italic">Aucune réponse enregistrée</p>
+                                                    {% endif %}
+                                                    
+                                                    <div class="mt-3 pt-3 border-t border-blue-200">
+                                                        <p class="text-xs text-gray-600">
+                                                            Type de quiz: <span class="font-medium">{{ response.quiz_type }}</span>
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+
+                                {% if messages %}
+                                    <div class="space-y-4" id="message-list">
+                                        {% for message in messages %}
+                                            <div class="flex {% if message.sender == user %}justify-end{% else %}justify-start{% endif %}">
+                                                <div class="message-bubble relative max-w-xl px-4 py-2 rounded-lg shadow {% if message.sender == user %}bg-blue-500 text-white{% else %}bg-gray-100 text-gray-800{% endif %}">
+                                                    <p>{{ message.content }}</p>
+                                                    <span class="block text-xs {% if message.sender == user %}text-blue-200{% else %}text-gray-500{% endif %} mt-1">
+                                                        {{ message.timestamp|date:"H:i" }}
+                                                        {% if message.sender == user %}
+                                                            {% if message.is_read %}
+                                                                <span class="ml-1">✓✓</span>
+                                                            {% else %}
+                                                                <span class="ml-1">✓</span>
+                                                            {% endif %}
+                                                        {% endif %}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        {% endfor %}
+                                    </div>
+                                {% else %}
+                                    {% if not has_quiz_responses %}
+                                        <div class="text-center py-8 text-gray-500" id="no-messages">
+                                            Aucun message pour le moment
+                                        </div>
+                                    {% endif %}
+                                {% endif %}
+                            </div>
+                            
+                            <!-- Saisie de message -->
+                            <div class="border-t border-gray-200 p-4">
+                                <form method="post" id="message-form">
+                                    {% csrf_token %}
+                                    <div class="flex items-end space-x-2">
+                                        <div class="flex-1">
+                                            <textarea 
+                                                name="content" 
+                                                id="id_content"
+                                                class="w-full p-3 border border-gray-300 rounded-lg resize-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                                rows="2"
+                                                placeholder="Tapez votre message..."
+                                                required></textarea>
+                                        </div>
+                                        <button type="submit" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-3 rounded-lg transition duration-150">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                                <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" />
+                                            </svg>
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Navigation dropdown functionality
+        const userMenuButton = document.getElementById('user-menu-button');
+        const userDropdown = document.getElementById('user-dropdown');
+        let isOpen = false;
+
+        if (userMenuButton && userDropdown) {
+            userMenuButton.addEventListener('click', () => {
+                isOpen = !isOpen;
+                
+                if (isOpen) {
+                    userDropdown.classList.remove('hidden');
+                    setTimeout(() => {
+                        userDropdown.classList.remove('opacity-0', 'scale-95');
+                        userDropdown.classList.add('opacity-100', 'scale-100');
+                    }, 10);
+                } else {
+                    userDropdown.classList.remove('opacity-100', 'scale-100');
+                    userDropdown.classList.add('opacity-0', 'scale-95');
+                    setTimeout(() => {
+                        userDropdown.classList.add('hidden');
+                    }, 200);
+                }
+            });
+
+            document.addEventListener('click', (event) => {
+                if (!userMenuButton.contains(event.target) && !userDropdown.contains(event.target)){
+                    userDropdown.classList.remove('opacity-100', 'scale-100');
+                    userDropdown.classList.add('opacity-0', 'scale-95');
+                    setTimeout(() => {
+                        userDropdown.classList.add('hidden');
+                        isOpen = false;
+                    }, 200);
+                }
+            });
+        }
+
+        // Quiz responses toggle functionality
+        function toggleQuizResponses(responseId) {
+            const content = document.getElementById(`quiz-content-${responseId}`);
+            const button = document.getElementById(`toggle-btn-${responseId}`);
+            
+            if (!content || !button) return;
+            
+            const isHidden = content.style.display === 'none';
+            
+            if (isHidden) {
+                content.style.display = 'block';
+                content.style.opacity = '0';
+                setTimeout(() => {
+                    content.style.opacity = '1';
+                }, 10);
+                button.textContent = 'Masquer';
+            } else {
+                content.style.opacity = '0';
+                setTimeout(() => {
+                    content.style.display = 'none';
+                }, 300);
+                button.textContent = 'Afficher';
+            }
+        }
+
+        // Fonction pour accepter l'annonce
+        function acceptAnnouncement(announcementId) {
+            const acceptBtn = document.getElementById('accept-btn');
+            
+            if (!acceptBtn) return;
+            
+            // Désactiver le bouton pendant la requête
+            acceptBtn.disabled = true;
+            acceptBtn.style.opacity = '0.6';
+            acceptBtn.style.cursor = 'not-allowed';
+            
+            // Obtenir le token CSRF
+            const csrfToken = getCookie('csrftoken') || document.querySelector('[name=csrfmiddlewaretoken]').value;
+            
+            fetch(`/user/accept-announcement/${announcementId}/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': csrfToken,
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                credentials: 'same-origin'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Masquer le bouton accepter
+                    acceptBtn.style.display = 'none';
+                    
+                    // Afficher un message de succès
+                    showNotification('Annonce acceptée avec succès!', 'success');
+                    
+                    // Optionnel: recharger la page après un délai
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 2000);
+                } else {
+                    showNotification(data.message || 'Erreur lors de l\'acceptation', 'error');
+                    // Réactiver le bouton en cas d'erreur
+                    acceptBtn.disabled = false;
+                    acceptBtn.style.opacity = '1';
+                    acceptBtn.style.cursor = 'pointer';
+                }
+            })
+            .catch(error => {
+                console.error('Erreur:', error);
+                showNotification('Erreur lors de l\'acceptation de l\'annonce', 'error');
+                // Réactiver le bouton en cas d'erreur
+                acceptBtn.disabled = false;
+                acceptBtn.style.opacity = '1';
+                acceptBtn.style.cursor = 'pointer';
+            });
+        }
+
+        // Fonction pour obtenir le cookie CSRF
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+
+        // Fonction pour afficher les notifications
+        function showNotification(message, type = 'info') {
+            const notification = document.createElement('div');
+            notification.className = `fixed top-4 right-4 z-50 px-6 py-3 rounded-lg shadow-lg text-white font-medium transition-all duration-300 transform translate-x-full`;
+            
+            // Couleurs selon le type
+            if (type === 'success') {
+                notification.classList.add('bg-green-500');
+            } else if (type === 'error') {
+                notification.classList.add('bg-red-500');
+            } else {
+                notification.classList.add('bg-blue-500');
+            }
+            
+            notification.textContent = message;
+            document.body.appendChild(notification);
+            
+            // Animation d'entrée
+            setTimeout(() => {
+                notification.classList.remove('translate-x-full');
+                notification.classList.add('translate-x-0');
+            }, 10);
+            
+            // Animation de sortie après 3 secondes
+            setTimeout(() => {
+                notification.classList.remove('translate-x-0');
+                notification.classList.add('translate-x-full');
+                setTimeout(() => {
+                    document.body.removeChild(notification);
+                }, 300);
+            }, 3000);
+        }
+
+        // Chat functionality
+       document.addEventListener('DOMContentLoaded', function() {
+    const messagesContainer = document.getElementById('messages-container');
+    const messageForm = document.getElementById('message-form');
+    const messageInput = document.querySelector('#id_content');
+    const messageList = document.getElementById('message-list');
+    const noMessages = document.getElementById('no-messages');
+    
+function sendMessage() {
+    const message = messageInput.value.trim();
+    if (!message) return;
+    
+    // Disable the form while sending
+    messageInput.disabled = true;
+    const submitButton = messageForm.querySelector('button[type="submit"]');
+    if (submitButton) {
+        submitButton.disabled = true;
+    }
+    
+    // Get CSRF token
+    const csrfToken = getCookie('csrftoken') || document.querySelector('[name=csrfmiddlewaretoken]').value;
+    
+    // Send the message to the server
+    fetch(window.location.href, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': csrfToken,
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: new URLSearchParams({
+            'content': message,
+            'csrfmiddlewaretoken': csrfToken
+        }),
+        credentials: 'same-origin'
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data.success) {
+            // Clear the input
+            messageInput.value = '';
+            
+            // Add message to UI immediately for better UX
+            addMessageToUI(message, true);
+            
+            // Reload the page after successful message send
+            setTimeout(() => {
+                window.location.reload();
+            }, 500); // Small delay to show the message was added
+            
+        } else {
+            throw new Error(data.message || 'Erreur lors de l\'envoi du message');
+        }
+    })
+    .catch(error => {
+        console.error('Error sending message:', error);
+        
+        // Reload the page to recover from error and check if message was actually sent
+        
+            window.location.reload();
+        
+    })
+    .finally(() => {
+        // Re-enable the form (though page will reload anyway)
+        messageInput.disabled = false;
+        if (submitButton) {
+            submitButton.disabled = false;
+        }
+    });
+}
+    function addMessageToUI(message, isSent = false) {
+        const tempMessageId = 'temp-' + Date.now();
+        const messageHTML = `
+            <div id="${tempMessageId}" class="flex justify-end animate-fade-in">
+                <div class="message-bubble relative max-w-xl px-4 py-2 rounded-lg shadow bg-blue-500 text-white">
+                    <p>${message.replace(/\n/g, '<br>')}</p>
+                    <span class="block text-xs text-blue-200 mt-1">
+                        ${new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                        <span class="ml-1 read-receipt">${isSent ? '✓' : '⏳'}</span>
+                    </span>
+                </div>
+            </div>
+        `;
+        
+        if (!messageList) {
+            const newMessageList = document.createElement('div');
+            newMessageList.id = 'message-list';
+            newMessageList.className = 'space-y-4';
+            newMessageList.innerHTML = messageHTML;
+            
+            if (noMessages) {
+                noMessages.remove();
+            }
+            
+            messagesContainer.appendChild(newMessageList);
+        } else {
+            const messageDiv = document.createElement('div');
+            messageDiv.innerHTML = messageHTML;
+            messageList.appendChild(messageDiv.firstElementChild);
+        }
+        
+        scrollToBottom();
+    }
+
+    function scrollToBottom() {
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    }
+    
+    if (messageForm) {
+        messageForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            sendMessage();
+        });
+    }
+
+    if (messageInput) {
+        messageInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+    }
+
+    // Auto-scroll to bottom on page load
+    scrollToBottom();
+});
+
+// Alternative approach - Let Django handle the form submission normally
+// Remove the above code and use this simpler version if you prefer:
+
+/*
+document.addEventListener('DOMContentLoaded', function() {
+    const messagesContainer = document.getElementById('messages-container');
+    const messageInput = document.querySelector('#id_content');
+    
+    function scrollToBottom() {
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    }
+    
+    if (messageInput) {
+        messageInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                // Let the form submit normally
+                document.getElementById('message-form').submit();
+            }
+        });
+    }
+
+    // Auto-scroll to bottom on page load
+    scrollToBottom();
+});
+*/
+    </script>
+</body>
+</html>

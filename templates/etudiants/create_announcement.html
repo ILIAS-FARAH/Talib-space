@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Announcement | Talib Space</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Image Preview Styling */
+#thumbnailStrip {
+    display: flex;
+    gap: 0.75rem;
+    padding-bottom: 0.5rem;
+    overflow-x: auto;
+}
+
+.thumbnail-container {
+    position: relative;
+    flex-shrink: 0;
+    width: 64px;
+    height: 64px;
+}
+
+.thumbnail-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 0.5rem;
+    border: 2px solid #e5e7eb;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.thumbnail-img.active {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+}
+
+.remove-btn {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    width: 20px;
+    height: 20px;
+    background-color: #ef4444;
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: bold;
+    cursor: pointer;
+    border: 2px solid white;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    transition: all 0.2s ease;
+}
+
+.remove-btn:hover {
+    background-color: #dc2626;
+    transform: scale(1.1);
+}
+        /* Base dropdown styling */
+.form-select {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+    background-position: right 0.75rem center;
+    background-repeat: no-repeat;
+    background-size: 1.25em 1.25em;
+    padding-right: 2.5rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+/* Dropdown options styling */
+select option {
+    padding: 0.75rem 1rem;
+    background: white;
+    color: #374151;
+    font-size: 0.9375rem;
+}
+
+/* Hover state for options */
+select option:hover {
+    background-color: #f3f4f6;
+}
+
+/* Selected option styling */
+select option:checked {
+    background-color: #3b82f6;
+    color: white;
+    font-weight: 500;
+}
+
+/* Focus state */
+.form-select:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+/* Dropdown container (optional) */
+.dropdown-container {
+    position: relative;
+    margin-bottom: 1rem;
+}
+        .form-select {
+    appearance: none; /* This hides the default browser arrow */
+    -webkit-appearance: none; /* For Safari */
+    -moz-appearance: none; /* For Firefox */
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+    background-position: right 0.5rem center;
+    background-repeat: no-repeat;
+    background-size: 1.5em 1.5em;
+    padding-right: 2.5rem;
+}
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f9fafb;
+        }
+        
+        .form-input {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 1px solid #e5e7eb;
+            border-radius: 0.5rem;
+            background-color: white;
+            transition: all 0.2s ease;
+            font-size: 1rem;
+        }
+        
+        .form-input:focus {
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+            outline: none;
+        }
+        
+        .form-textarea {
+            min-height: 120px;
+        }
+        
+        .form-select {
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+            background-position: right 0.5rem center;
+            background-repeat: no-repeat;
+            background-size: 1.5em 1.5em;
+            padding-right: 2.5rem;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+        
+        .image-upload:hover {
+            border-color: #93c5fd;
+            background-color: #f8fafc;
+        }
+    </style>
+</head>
+<body class="h-full flex flex-col bg-gray-50">
+ <nav class="w-full sticky top-0 z-50 bg-white shadow">
+    <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex justify-between items-center py-4">
+            <div class="flex items-center">
+                <a href="{% url 'pages:homepage' %}" class="flex items-center">
+                    <img src="https://img.freepik.com/vecteurs-premium/creation-logo-education-scolaire-maison-modele-logo-logement-etudiant_825834-932.jpg"
+                        alt="Talib Space Logo" class="h-12 w-auto mr-3">
+                    <span class="text-2xl font-extrabold text-gray-800">talib space</span>
+                    <span class="ml-4 text-gray-600">| roomate founder</span>
+                </a>
+            </div>
+
+            <div class="hidden md:flex items-center space-x-8">
+                <a href="{% url 'pages:offers' %}" class="text-gray-600 hover:text-blue-500 transition duration-300">Offers</a>
+                <a href="{% url 'pages:howworks' %}" class="text-gray-600 hover:text-blue-500 transition duration-300">How Talib Space Works</a>
+                <a href="{% url 'pages:testo' %}" class="text-gray-600 hover:text-blue-500 transition duration-300">Testimonials</a>
+            </div>
+
+            {% if user.is_authenticated %}
+                <!-- Logged-in User Menu -->
+                <div class="flex items-center space-x-4">
+                    <div class="relative">
+                        <button id="user-menu-button" type="button" class="flex items-center space-x-2 focus:outline-none">
+                            <span class="text-gray-600">{{ user.name }}</span>
+                            <div class="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden">
+                                {% if user.profile_picture %}
+                                    <img src="{{ user.profile_picture.url }}" alt="Profile Photo" class="w-full h-full object-cover">
+                                {% else %}
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-500" viewBox="0 0 20 20" fill="currentColor">
+                                        <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd" />
+                                    </svg>
+                                {% endif %}
+                            </div>
+                        </button>
+                        
+                        <!-- Dropdown menu -->
+                        <div id="user-dropdown" class="hidden absolute right-0 mt-2 w-48 origin-top-right bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none transition-all duration-200 transform opacity-0 scale-95">
+                            {% if user.is_staff %}
+                                <!-- Menu pour les utilisateurs staff -->
+                                <div class="py-1" role="none">
+                                    <a href="{% url 'pages:admin_dashboard' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition duration-150">Dashboard</a>
+                                    <a href="{% url 'contact:reports_dashboard' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition duration-150">Reports</a>
+                                    <a href="{% url 'pages:profile' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition duration-150">Profile</a>
+                                    <a href="{% url 'pages:settings' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition duration-150">Settings</a>
+
+                                    <div class="border-t border-gray-100"></div>
+                                    <a href="{% url 'pages:logout' %}" class="block px-4 py-2 text-sm text-red-700 hover:bg-gray-100 transition duration-150">Sign out</a>
+                                </div>
+                            {% else %}
+                                <!-- Menu pour les utilisateurs normaux -->
+                                <div class="py-1" role="none">
+                                    <a href="{% url 'etudiants:my_announcements' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition duration-150">My Announcements</a>
+                                    <a href="{% url 'etudiants:my_favorites' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition duration-150">My Favorites</a>
+                                    <a href="{% url 'pages:profile' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition duration-150">Profile</a>
+                                    <a href="{% url 'inbox' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition duration-150">inbox</a>
+                                    
+                                    <div class="border-t border-gray-100"></div>
+                                    <a href="{% url 'pages:logout' %}" class="block px-4 py-2 text-sm text-red-700 hover:bg-gray-100 transition duration-150">Sign out</a>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            {% else %}
+                <!-- Visitor Menu -->
+                <div class="flex items-center space-x-4">
+                    <a href="{% url 'pages:login' %}" class="px-4 py-2 border border-blue-500 text-blue-500 rounded-md hover:bg-blue-50 transition duration-300">Sign In</a>
+                    <a href="{% url 'pages:register' %}" class="px-4 py-2 border border-green-500 text-green-500 rounded-md hover:bg-green-50 transition duration-300">Create Account</a>
+                </div>
+            {% endif %}
+
+            <!-- Mobile menu button (visible on small screens) -->
+            <div class="md:hidden flex items-center">
+                <button class="mobile-menu-button">
+                    <svg class="w-6 h-6 text-gray-500" fill="none" stroke-linecap="round" stroke-linejoin="round"
+                        stroke-width="2" viewBox="0 0 24 24" stroke="currentColor">
+                        <path d="M4 6h16M4 12h16M4 18h16"></path>
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </div>
+</nav>
+
+   
+   <main class="flex-1">
+       <div class="container mx-auto px-4 py-8">
+           <div class="mb-6">
+               <a href="{% url 'etudiants:my_announcements' %}" class="inline-flex items-center text-blue-600 hover:text-blue-800">
+                   <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                   </svg>
+                   Back to My Announcements
+               </a>
+           </div>
+           
+           <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+               <div class="p-6 border-b border-gray-200 bg-gray-50">
+                   <h1 class="text-2xl font-semibold text-gray-800">Create New Announcement</h1>
+               </div>
+               
+               <form method="post" enctype="multipart/form-data" class="p-6">
+                   {% csrf_token %}
+                   
+                   {% if form.errors %}
+                   <div class="bg-red-50 border-l-4 border-red-500 p-4 mb-6 rounded">
+                       <div class="flex">
+                           <div class="flex-shrink-0">
+                               <svg class="h-5 w-5 text-red-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                   <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+                               </svg>
+                           </div>
+                           <div class="ml-3">
+                               <h3 class="text-sm font-medium text-red-800">Please correct the following errors:</h3>
+                               <div class="mt-2 text-sm text-red-700">
+                                   <ul class="list-disc pl-5 space-y-1">
+                                   {% for field in form %}
+                                       {% if field.errors %}
+                                       {% for error in field.errors %}
+                                       <li>{{ field.label }}: {{ error }}</li>
+                                       {% endfor %}
+                                       {% endif %}
+                                   {% endfor %}
+                                   </ul>
+                               </div>
+                           </div>
+                       </div>
+                   </div>
+                   {% endif %}
+                   
+                   <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                       <!-- Left Column - Basic Information -->
+                       <div class="space-y-5">
+                           <!-- Title -->
+                           <div>
+                               <label for="{{ form.title.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+                                   {{ form.title.label }}
+                               </label>
+                               <input type="text" 
+                                      id="{{ form.title.id_for_label }}" 
+                                      name="{{ form.title.name }}" 
+                                      class="form-input" 
+                                      placeholder="e.g., Cozy Room Near University"
+                                      value="{{ form.title.value|default_if_none:'' }}">
+                           </div>
+                           
+                           <!-- City and Price -->
+                           <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                               <div>
+                                   <label for="{{ form.city.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+                                       {{ form.city.label }}
+                                   </label>
+                                   <input type="text" 
+                                          id="{{ form.city.id_for_label }}" 
+                                          name="{{ form.city.name }}" 
+                                          class="form-input" 
+                                          placeholder="e.g., Fes, Rabat, Casablanca"
+                                          value="{{ form.city.value|default_if_none:'' }}">
+                               </div>
+                               
+                               <div>
+                                   <label for="{{ form.price.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+                                       {{ form.price.label }}
+                                   </label>
+                                   <div class="relative rounded-md shadow-sm">
+                                       <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                           <span class="text-gray-500">$</span>
+                                       </div>
+                                       <input type="number" 
+                                              id="{{ form.price.id_for_label }}" 
+                                              name="{{ form.price.name }}" 
+                                              class="form-input pl-7" 
+                                              placeholder="0.00"
+                                              step="0.01"
+                                              value="{{ form.price.value|default_if_none:'' }}">
+                                   </div>
+                               </div>
+                           </div>
+                           
+                           <!-- Room Type and Gender Preference -->
+                           <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                               <div>
+                                   <label for="{{ form.room_type.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+                                       {{ form.room_type.label }}
+                                   </label>
+                                   <select id="{{ form.room_type.id_for_label }}" 
+                                           name="{{ form.room_type.name }}" 
+                                           class="form-input form-select">
+                                       {% for value, label in form.room_type.field.choices %}
+                                       <option value="{{ value }}" {% if form.room_type.value == value %}selected{% endif %}>{{ label }}</option>
+                                       {% endfor %}
+                                   </select>
+                               </div>
+                               
+                               <div>
+                                   <label for="{{ form.gender_preference.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+                                       {{ form.gender_preference.label }}
+                                   </label>
+                                   <select id="{{ form.gender_preference.id_for_label }}" 
+                                           name="{{ form.gender_preference.name }}" 
+                                           class="form-input form-select">
+                                       {% for value, label in form.gender_preference.field.choices %}
+                                       <option value="{{ value }}" {% if form.gender_preference.value == value %}selected{% endif %}>{{ label }}</option>
+                                       {% endfor %}
+                                   </select>
+                               </div>
+                           </div>
+                           
+                           <!-- Description -->
+                           <div>
+                               <label for="{{ form.description.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+                                   {{ form.description.label }}
+                               </label>
+                               <textarea id="{{ form.description.id_for_label }}" 
+                                         name="{{ form.description.name }}" 
+                                         class="form-input form-textarea" 
+                                         placeholder="Describe your accommodation...">{{ form.description.value|default_if_none:'' }}</textarea>
+                           </div>
+                       </div>
+                       
+                       <!-- Right Column - Images and Amenities -->
+                       <div class="space-y-5">
+                           <!-- Image Upload Section -->
+                           <div>
+                               <label class="block text-sm font-medium text-gray-700 mb-2">
+                                   Upload Images
+                               </label>
+                               
+                               <div class="image-upload relative border-2 border-dashed border-gray-300 rounded-lg p-6 text-center transition-colors">
+                                   <input type="file" 
+                                          name="images" 
+                                          id="id_images" 
+                                          multiple 
+                                          accept="image/*"
+                                          class="hidden"
+                                          onchange="handleImageUpload(event)">
+                                   <label for="id_images" class="cursor-pointer">
+                                       <div class="flex flex-col items-center justify-center">
+                                           <svg class="w-10 h-10 text-gray-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                           </svg>
+                                           <span class="block text-sm font-medium text-gray-600">Click to upload images</span>
+                                           <span class="block text-xs text-gray-500 mt-1">PNG, JPG up to 10MB each</span>
+                                       </div>
+                                   </label>
+                               </div>
+                               
+                               <!-- Image Preview Section -->
+                               <div id="imagePreviewContainer" class="mt-4 hidden">
+                                   <!-- Main Image Display -->
+                                   <div class="relative mb-4 rounded-lg overflow-hidden border border-gray-200">
+                                       <img id="mainImage" 
+                                            src="" 
+                                            alt="Main preview" 
+                                            class="w-full h-64 object-cover">
+                                       <div class="absolute top-3 right-3 bg-black bg-opacity-50 text-white px-2 py-1 rounded-full text-xs">
+                                           <span id="imageCounter">1 / 1</span>
+                                       </div>
+                                   </div>
+                                   <br>
+                                   
+                                   <!-- Thumbnail Strip -->
+                                   <div class="flex space-x-3 overflow-x-auto pb-3" id="thumbnailStrip">
+                                    <br>
+                                       <!-- Thumbnails will be inserted here -->
+                                   </div>
+                                   
+                                   <!-- Clear All Button -->
+                                   <div class="mt-3 flex justify-end">
+                                       <button type="button" 
+                                               onclick="clearAllImages()"
+                                               class="px-3 py-1.5 bg-red-500 text-white text-sm rounded-lg hover:bg-red-600 transition-colors flex items-center">
+                                           <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                           </svg>
+                                           Clear All
+                                       </button>
+                                   </div>
+                               </div>
+                           </div>
+                           
+                           <!-- Amenities Section -->
+                           <div>
+                               <label class="block text-sm font-medium text-gray-700 mb-3">
+                                   Amenities
+                               </label>
+                               <div class="grid grid-cols-2 gap-3">
+                                   {% for choice in form.amenities.field.choices %}
+                                   <div class="flex items-center p-3 border border-gray-200 rounded-lg hover:border-blue-200 hover:bg-blue-50 transition-colors">
+                                       <input type="checkbox" 
+                                              name="amenities" 
+                                              value="{{ choice.0 }}" 
+                                              id="id_amenities_{{ forloop.counter0 }}" 
+                                              class="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
+                                       <label for="id_amenities_{{ forloop.counter0 }}" 
+                                              class="ml-2 block text-sm text-gray-700 cursor-pointer flex-1">
+                                           {{ choice.1 }}
+                                       </label>
+                                   </div>
+                                   {% endfor %}
+                               </div>
+                           </div>
+                       </div>
+                   </div>
+                   
+                   <!-- Submit Button -->
+                   <div class="mt-8 flex justify-end">
+                       <button type="submit" 
+                               class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-8 rounded-lg shadow-sm transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                           Create Announcement
+                       </button>
+                   </div>
+               </form>
+           </div>
+       </div>
+   </main>
+   
+   <!-- Your existing footer code remains the same -->
+    <script>
+        const userMenuButton = document.getElementById('user-menu-button');
+        const userDropdown = document.getElementById('user-dropdown');
+        let isOpen = false;
+
+        userMenuButton.addEventListener('click', () => {
+            isOpen = !isOpen;
+            
+            if (isOpen) {
+                userDropdown.classList.remove('hidden');
+                // Trigger the animation by removing and adding the classes
+                setTimeout(() => {
+                    userDropdown.classList.remove('opacity-0', 'scale-95');
+                    userDropdown.classList.add('opacity-100', 'scale-100');
+                }, 10);
+            } else {
+                userDropdown.classList.remove('opacity-100', 'scale-100');
+                userDropdown.classList.add('opacity-0', 'scale-95');
+                // Wait for the animation to finish before hiding
+                setTimeout(() => {
+                    userDropdown.classList.add('hidden');
+                }, 200);
+            }
+        });
+
+        // Close the dropdown when clicking outside
+        document.addEventListener('click', (event) => {
+            if (!userMenuButton.contains(event.target) ){
+                userDropdown.classList.remove('opacity-100', 'scale-100');
+                userDropdown.classList.add('opacity-0', 'scale-95');
+                setTimeout(() => {
+                    userDropdown.classList.add('hidden');
+                    isOpen = false;
+                }, 200);
+            }
+        });
+    </script>
+   <script>
+   // Your existing JavaScript code for image handling remains the same
+   let selectedFiles = [];
+   let currentImageIndex = 0;
+
+   function handleImageUpload(event) {
+       const files = Array.from(event.target.files);
+       selectedFiles = files;
+       
+       if (files.length > 0) {
+           displayImagePreviews();
+           document.getElementById('imagePreviewContainer').classList.remove('hidden');
+       }
+   }
+
+ function displayImagePreviews() {
+    const mainImage = document.getElementById('mainImage');
+    const thumbnailStrip = document.getElementById('thumbnailStrip');
+    const imageCounter = document.getElementById('imageCounter');
+    
+    // Clear existing thumbnails
+    thumbnailStrip.innerHTML = '';
+    
+    // Display main image
+    if (selectedFiles.length > 0) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            mainImage.src = e.target.result;
+        };
+        reader.readAsDataURL(selectedFiles[currentImageIndex]);
+    }
+    
+    // Create thumbnails
+    selectedFiles.forEach((file, index) => {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const thumbnailContainer = document.createElement('div');
+            thumbnailContainer.className = 'thumbnail-container';
+            
+            const thumbnail = document.createElement('img');
+            thumbnail.src = e.target.result;
+            thumbnail.className = `thumbnail-img ${index === currentImageIndex ? 'active' : ''}`;
+            thumbnail.onclick = () => switchMainImage(index);
+            
+            const removeButton = document.createElement('button');
+            removeButton.type = 'button';
+            removeButton.className = 'remove-btn';
+            removeButton.innerHTML = '×';
+            removeButton.onclick = (e) => {
+                e.stopPropagation();
+                removeImage(index);
+            };
+            
+            thumbnailContainer.appendChild(thumbnail);
+            thumbnailContainer.appendChild(removeButton);
+            thumbnailStrip.appendChild(thumbnailContainer);
+        };
+        reader.readAsDataURL(file);
+    });
+    
+    // Update counter
+    imageCounter.textContent = `${currentImageIndex + 1} / ${selectedFiles.length}`;
+}
+   function switchMainImage(index) {
+       currentImageIndex = index;
+       const reader = new FileReader();
+       reader.onload = function(e) {
+           document.getElementById('mainImage').src = e.target.result;
+       };
+       reader.readAsDataURL(selectedFiles[index]);
+       
+       // Update thumbnail borders
+       const thumbnails = document.querySelectorAll('#thumbnailStrip img');
+       thumbnails.forEach((thumb, i) => {
+           if (i === index) {
+               thumb.classList.add('border-blue-500', 'ring-2', 'ring-blue-200');
+               thumb.classList.remove('border-gray-300', 'hover:border-gray-400');
+           } else {
+               thumb.classList.remove('border-blue-500', 'ring-2', 'ring-blue-200');
+               thumb.classList.add('border-gray-300', 'hover:border-gray-400');
+           }
+       });
+       
+       // Update counter
+       document.getElementById('imageCounter').textContent = `${index + 1} / ${selectedFiles.length}`;
+   }
+
+   function removeImage(index) {
+       selectedFiles.splice(index, 1);
+       
+       if (selectedFiles.length === 0) {
+           document.getElementById('imagePreviewContainer').classList.add('hidden');
+           document.getElementById('id_images').value = '';
+       } else {
+           // Adjust current index if necessary
+           if (currentImageIndex >= selectedFiles.length) {
+               currentImageIndex = selectedFiles.length - 1;
+           } else if (currentImageIndex > index) {
+               currentImageIndex--;
+           }
+           
+           displayImagePreviews();
+           updateFileInput();
+       }
+   }
+
+   function clearAllImages() {
+       selectedFiles = [];
+       currentImageIndex = 0;
+       document.getElementById('imagePreviewContainer').classList.add('hidden');
+       document.getElementById('id_images').value = '';
+   }
+
+   function updateFileInput() {
+       const input = document.getElementById('id_images');
+       const dt = new DataTransfer();
+       
+       selectedFiles.forEach(file => {
+           dt.items.add(file);
+       });
+       
+       input.files = dt.files;
+   }
+
+   // Add keyboard navigation
+   document.addEventListener('keydown', function(e) {
+       if (selectedFiles.length > 1 && !document.getElementById('imagePreviewContainer').classList.contains('hidden')) {
+           if (e.key === 'ArrowLeft') {
+               e.preventDefault();
+               const newIndex = currentImageIndex > 0 ? currentImageIndex - 1 : selectedFiles.length - 1;
+               switchMainImage(newIndex);
+           } else if (e.key === 'ArrowRight') {
+               e.preventDefault();
+               const newIndex = currentImageIndex < selectedFiles.length - 1 ? currentImageIndex + 1 : 0;
+               switchMainImage(newIndex);
+           }
+       }
+   });
+   </script>
+</body>
+</html>
